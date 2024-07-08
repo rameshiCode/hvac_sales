@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 # instantiate the app
 app = Flask(__name__)
+app.config.from_object(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db.init_app(app)
 
@@ -19,6 +20,7 @@ class Client(db.Model):
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
     email = db.Column(db.String(100))
+    
 
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
