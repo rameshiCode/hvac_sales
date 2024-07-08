@@ -20,7 +20,7 @@ class Client(db.Model):
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
     email = db.Column(db.String(100))
-    
+
 
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
@@ -42,4 +42,5 @@ def add_client():
     return jsonify({"message": "Client added successfully!"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
