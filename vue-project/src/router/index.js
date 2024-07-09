@@ -1,10 +1,6 @@
-// import Vue from 'vue';
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PingView from '../views/PingView.vue';
-
-
-// Vue.use(Router);
 
 
 const router = createRouter({
