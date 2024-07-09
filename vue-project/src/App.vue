@@ -6,8 +6,11 @@
       <HelloWorld msg="You did it!" />
     
       <nav>
+
+        <RouterLink to="/ping">Ping</RouterLink> <!-- Add this line -->
+        <RouterLink to="/login">Login</RouterLink>
         <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="sign-up">Signup</RouterLink>
       </nav>
   </div>
   </header>
