@@ -1,8 +1,6 @@
 <template>
-    <div class="ping-view">
-      <h1>Ping Pong Test</h1>
-      <button @click="sendPing">Ping</button>
-      <p>Response: {{ response }}</p>
+    <div class="ping-view container">
+      <p class="alert alert-info">{{ response }}</p>
     </div>
   </template>
   
@@ -18,7 +16,7 @@
     },
     methods: {
       sendPing() {
-        axios.get('http://localhost:5000/ping')
+        axios.get('http://localhost:5001/ping')
           .then(result => {
             this.response = result.data;
           })
@@ -27,6 +25,9 @@
             this.response = 'Error: ' + error.message;
           });
       }
+    },
+    mounted() {
+      this.sendPing();
     }
   };
   </script>

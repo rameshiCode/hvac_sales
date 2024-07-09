@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -31,7 +31,7 @@ with app.app_context():
 # sanity check route
 @app.route('/ping', methods=['GET'])
 def ping_pong():
-    return jsonify('pong!')
+    return jsonify('Pong!')
 
 @app.route('/add_client', methods=['POST'])
 def add_client():
