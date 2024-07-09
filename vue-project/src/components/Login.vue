@@ -65,6 +65,41 @@
   </script>
   
   <style scoped>
-
-  </style>
+  .login-form {
+    max-width: 500px;
+    margin: auto;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    color: black;
+  }
   
+  .login-form .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .login-form label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .login-form input[type="text"],
+  .login-form input[type="email"],
+  .login-form input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  
+  .login-form button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007BFF;
+    color: black;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .login-form button:disabled {
+    background-color: #ccc;
+  }
+</style>

@@ -1,34 +1,21 @@
 <template>
-    <div class="home">
-      <h1>Welcome to E-caldura</h1>
-      <p>This is the home page of our application.</p>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'Home'
-  };
-  </script>
-  
-  <style scoped>
-  .home {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #f5f5f5; /* Adjust to match your design */
-    color: #333; /* Adjust to match your design */
-  }
-  
-  h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-  }
-  
-  p {
-    font-size: 1.2rem;
-  }
-  </style>
-  
+  <div>
+    <h1>Welcome to the Home Page</h1>
+    <router-link to="/add-client" class="btn">Add Client</router-link>
+  </div>
+</template>
+
+<style>
+.btn {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+</style>

@@ -77,7 +77,7 @@
     margin: auto;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    color: white;
+    color: black;
   }
   
   .signup-form .form-group {
@@ -102,7 +102,7 @@
     width: 100%;
     padding: 10px;
     background-color: #007BFF;
-    color: white;
+    color: black;
     border: none;
     cursor: pointer;
   }

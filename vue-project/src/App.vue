@@ -11,6 +11,8 @@
         <RouterLink to="/login">Login</RouterLink>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="sign-up">Signup</RouterLink>
+        <RouterLink to="/product-management">Manage Products</RouterLink>
+
       </nav>
   </div>
   </header>
@@ -36,18 +38,24 @@ export default {
 header {
   line-height: 1.5;
   max-height: 100vh;
+  background-color: #414141;
+  width: 100%;
 }
 
 .logo {
+  width: 250px;
   display: block;
-  margin: 0 auto 2rem;
+  margin: 0 auto;
+  border-radius: 7px;
+  margin-bottom: 20px;
 }
 
 nav {
   width: 100%;
-  font-size: 12px;
+  font-size: 16px;
   text-align: center;
   margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 nav a.router-link-exact-active {
