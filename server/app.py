@@ -1,9 +1,11 @@
 import os 
+import io
+import csv
+import sqlite3
 import pandas as pd
-from models import db  # Import db from the models package
 from flask_cors import CORS
-from models.models import Product, User  # Import User from models.models
-from flask import Flask, request, jsonify
+from models.models import Product, User, db  # Import User from models.models
+from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -88,17 +90,32 @@ def import_products():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/export', methods=['GET'])
+@app.route('/export-products', methods=['GET'])
 def export_products():
     try:
-        products_query = Product.query.all()
-        # Convert query results to a pandas DataFrame
-        df = pd.DataFrame([(d.name, d.price) for d in products_query], columns=['name', 'price'])
+        # Connect to the database
+        conn = sqlite3.connect('instance/products.db')
+        print(conn)
+        query = "SELECT * FROM product"
+        df = pd.read_sql_query(query, conn)
+        conn.close()
+
         # Convert DataFrame to CSV
-        csv = df.to_csv(index=False)
-        return csv, 200, {'Content-Type': 'text/csv'}
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
+
+        # Send the CSV file as a response
+        return send_file(
+            io.BytesIO(csv_buffer.getvalue().encode()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='products.csv'
+        )
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(e)
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
