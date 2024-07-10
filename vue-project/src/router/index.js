@@ -4,7 +4,8 @@ import PingView from '../views/PingView.vue';
 import SignUp from '@/components/SignUp.vue';
 import Login from '../components/Login.vue';
 import ProductManagement from '../components/ProductManagement.vue';
-import ClientForm from '@/views/ClientForm.vue';
+import ClientForm from '@/components/ClientForm.vue';
+import ProductManipulation from '../components/ProductManipulation.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/add-client',
       name: 'AddClient',
       component: ClientForm
+    },
+    {
+      path: '/product-manipulation',
+      name: 'ProductManipulation',
+      component: ProductManipulation,
     }
 
   ]

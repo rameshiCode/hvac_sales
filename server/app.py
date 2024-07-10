@@ -115,6 +115,35 @@ def export_products():
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/products', methods=['GET', 'POST'])
+def handle_products():
+    if request.method == 'POST':
+        data = request.json
+        new_product = Product(name=data['name'], price=data['price'])
+        db.session.add(new_product)
+        db.session.commit()
+        return jsonify({'id': new_product.id, 'name': new_product.name, 'price': new_product.price}), 201
+    else:  # This assumes GET method
+        products = Product.query.all()
+        return jsonify([{'id': p.id, 'name': p.name, 'price': p.price} for p in products])
+
+# Endpoint to manage a single product by ID with GET, PUT, and DELETE
+@app.route('/products/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def handle_product(id):
+    product = Product.query.get_or_404(id)
+    if request.method == 'PUT':
+        data = request.json
+        product.name = data.get('name', product.name)
+        product.price = data.get('price', product.price)
+        db.session.commit()
+        return jsonify({'id': product.id, 'name': product.name, 'price': product.price}), 200
+    elif request.method == 'DELETE':
+        db.session.delete(product)
+        db.session.commit()
+        return '', 204
+    else:  # This assumes GET method
+        return jsonify({'id': product.id, 'name': product.name, 'price': product.price})
 
 
 if __name__ == '__main__':

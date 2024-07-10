@@ -1,22 +1,5 @@
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.png" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    
-      <nav>
-
-        <RouterLink to="/ping">Ping</RouterLink> <!-- Add this line -->
-        <RouterLink to="/login">Login</RouterLink>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="sign-up">Signup</RouterLink>
-        <RouterLink to="/product-management">Manage Products</RouterLink>
-
-      </nav>
-  </div>
-  </header>
-
+  <Header />
   <RouterView />
 </template>
 
@@ -25,14 +8,65 @@ import { RouterLink, RouterView } from 'vue-router';
 import Header from './components/Header.vue';
 import Login from './components/Login.vue';
 import Home from './components/Home.vue';
+import ClientForm from './components/ClientForm.vue';
 export default {
   name: 'App',
   components: {
     RouterView,
-    Header
+    Header,
+    ClientForm
   }
 };
 </script>
+<!-- 
+<style scoped>
+header {
+  line-height: 1.5;
+  max-height: 100vh;
+  background-color: #414141;
+  width: 100%;
+}
+
+.logo {
+  width: 250px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 7px;
+  margin-bottom: 20px;
+}
+
+nav {
+  width: 100%;
+  font-size: 16px;
+  text-align: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+nav a.router-link-exact-active {
+  color: var(--color-text);
+}
+
+nav a.router-link-exact-active:hover {
+  background-color: transparent;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
+  border-left: 1px solid var(--color-border);
+}
+
+nav a:first-of-type {
+  border: 0;
+}
+
+@media (min-width: 1024px) {
+  header {
+    display: flex;
+    place-items: center;
+    padding-right: calc(var(--section-gap) / 2);
+  }
 
 <style scoped>
 header {
@@ -103,3 +137,14 @@ nav a:first-of-type {
   }
 }
 </style>
+
+  nav {
+    text-align: left;
+    margin-left: -1rem;
+    font-size: 1rem;
+
+    padding: 1rem 0;
+    margin-top: 1rem;
+  }
+}
+</style> -->
