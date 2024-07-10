@@ -12,7 +12,7 @@
           <router-link class="nav-link btn-hdr" to="/home">Home</router-link>
           <router-link class="nav-link btn-hdr" to="/product-management">ProductManagement</router-link>
           <router-link class="nav-link btn-hdr" to="/product-manipulation">Product Manipulation</router-link>
-          <router-link class="nav-link btn-hdr" to="/client-form">Client Form</router-link>
+          <router-link class="nav-link btn-hdr" to="/add-client">Add Client</router-link>
         
         </nav>
       </div>
