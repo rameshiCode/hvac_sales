@@ -43,7 +43,12 @@
     data() {
       return {
         products: [],
-        newProduct: { name: '', price: 0}
+        newProduct: { name: '', price: 0},
+        editingProductId: null,  // ID of the product being edited
+        editFormData: {          // Temporary form data for edits
+          name: '',
+          price: 0
+    }
       };
     },
     methods: {
