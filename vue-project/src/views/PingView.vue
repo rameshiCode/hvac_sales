@@ -1,14 +1,22 @@
 <template>
     <div class="ping-view">
       <h1>Ping Pong Test</h1>
-      <button @click="sendPing">Ping</button>
+      <v-btn @click="sendPing" class="md1">Ping</v-btn>
       <p>Response: {{ response }}</p>
+      <v-icon> mdi-account </v-icon>
+      <v-icon>mdi-home</v-icon>
+      <button class="v-btn">button md1</button>
     </div>
   </template>
   
-  <script>
+
+  <!-- <script setup>
+  import { mdiAccount } from '@mdi/js'
+</script> -->
+
+  <script >
   import axios from 'axios';
-  
+
   export default {
     name: 'PingView',
     data() {

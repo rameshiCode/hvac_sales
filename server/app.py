@@ -116,34 +116,46 @@ def export_products():
         print(e)
         return jsonify({"error": str(e)}), 500
     
-@app.route('/products', methods=['GET', 'POST'])
-def handle_products():
-    if request.method == 'POST':
-        data = request.json
-        new_product = Product(name=data['name'], price=data['price'])
-        db.session.add(new_product)
-        db.session.commit()
-        return jsonify({'id': new_product.id, 'name': new_product.name, 'price': new_product.price}), 201
-    else:  # This assumes GET method
-        products = Product.query.all()
-        return jsonify([{'id': p.id, 'name': p.name, 'price': p.price} for p in products])
+@app.route('/products', methods=['POST'])
+def add_product():
+    data = request.json
+    new_product = Product(name=data['name'], price=data['price'])
+    db.session.add(new_product)
+    db.session.commit()
+    return jsonify({'id': new_product.id, 'name': new_product.name, 'price': new_product.price}), 201
 
-# Endpoint to manage a single product by ID with GET, PUT, and DELETE
-@app.route('/products/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def handle_product(id):
-    product = Product.query.get_or_404(id)
-    if request.method == 'PUT':
-        data = request.json
-        product.name = data.get('name', product.name)
-        product.price = data.get('price', product.price)
-        db.session.commit()
-        return jsonify({'id': product.id, 'name': product.name, 'price': product.price}), 200
-    elif request.method == 'DELETE':
-        db.session.delete(product)
-        db.session.commit()
-        return '', 204
-    else:  # This assumes GET method
-        return jsonify({'id': product.id, 'name': product.name, 'price': product.price})
+@app.route('/products/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    return jsonify({'message': 'Product deleted'}), 204
+
+@app.route('/products', methods=['GET', 'POST'])
+def get_products():
+    page = request.args.get('page', 1, type=int)
+    items_per_page = request.args.get('itemsPerPage', 10, type=int)
+    search = request.args.get('search', '')  # Retrieve the search query parameter
+    sort_by = request.args.get('sortBy', 'name')
+    sort_order = request.args.get('sortOrder', 'asc')
+    # Query filtering based on search input
+    query = Product.query
+    if search:
+        query = query.filter((Product.name.like(f'%{search}%')) | (Product.price.like(f'%{search}%')))
+        # query = query.filter(Product.name.ilike(f'%{search}%'))  # Assuming you're searching in the 'name' field
+    if sort_order == 'asc':
+        query = query.order_by(getattr(Product, sort_by).asc())
+    else:
+        query = query.order_by(getattr(Product, sort_by).desc())
+    # Pagination after filtering
+    paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
+    products = paginated_result.items
+    total = paginated_result.total
+
+    return jsonify({
+        'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
+        'total': total
+    })
 
 
 if __name__ == '__main__':

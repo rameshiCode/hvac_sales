@@ -1,121 +1,121 @@
 <template>
-    <div>
-      <h2>Product Management</h2>
-      <form @submit.prevent="addProduct">
-        <div class="form-group">
-          <input type="text" id="productName" v-model="newProduct.name" required>
-          <label for="productName">Product Name</label>
-        </div>
-        <div class="form-group">
-          <input type="number" id="productPrice" v-model="newProduct.price" required>
-          <label for="productPrice">Price (RON)</label>
-        </div>
-        <button type="submit">Add Product</button>
-      </form>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Price (RON)</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="product in products" :key="product.id">
-            <td>{{ product.name }}</td>
-            <td>{{ product.price }} RON</td>
-            <td>
-              <button @click="deleteProduct(product.id)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </template>
-  
-  
-  
-  
-  <script>
-  import axios from 'axios';
-  
-  export default {
-    data() {
-      return {
-        products: [],
-        newProduct: { name: '', price: 0},
-        editingProductId: null,  // ID of the product being edited
-        editFormData: {          // Temporary form data for edits
-          name: '',
-          price: 0
-    }
-      };
+  <v-card>
+    <v-container class="pa-3">
+      <v-row>
+        <v-col cols="12" sm="5">
+          <v-text-field
+            v-model="newProduct.name"
+            label="Product Name"
+            required
+            :rules="[v => !!v || 'Name is required']"
+            outlined
+            dense
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="5">
+          <v-text-field
+            v-model="newProduct.price"
+            label="Price"
+            required
+            :rules="[v => !!v || 'Price is required']"
+            type="number"
+            prefix="$"
+            outlined
+            dense
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="2">
+          <v-btn color="primary" @click="addProduct" block>Add Product</v-btn>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <v-data-table
+      v-model:items-per-page="itemsPerPage"
+      :headers="headers"
+      :items="serverItems"
+      :server-items-length="totalItems"
+      :loading="loading"
+      :search="search"
+      @update:options="loadItems"
+      class="elevation-1"
+    >
+      <template v-slot:top>
+        <v-text-field
+          v-model="search"
+          append-icon="mdi-magnify"
+          label="Search"
+          single-line
+          hide-details
+          class="mb-3"
+        ></v-text-field>
+      </template>
+      <template v-slot:item.actions="{ item }">
+        <v-icon small class="mr-2" @click="deleteProduct(item.id)">
+          mdi-delete
+        </v-icon>
+      </template>
+    </v-data-table>
+  </v-card>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  data: () => ({
+    itemsPerPage: 5,
+    newProduct: {
+      name: '',
+      price: ''
     },
-    methods: {
-      fetchProducts() {
-        axios.get(`${this.$apiUrl}/products`)
-          .then(response => {
-            this.products = response.data;
-          })
-          .catch(error => {
-            console.error('There was an error!', error);
-          });
-      },
-      addProduct() {
-        axios.post(`${this.$apiUrl}/products`, this.newProduct)
-          .then(response => {
-            this.products.unshift(response.data); // Adds the new product to the beginning of the array
-            this.newProduct = { name: '', price: 0 }; // Reset the form after submission
-        })
-          .catch(error => {
-            console.error('There was an error!', error);
-          });
-      },
-      deleteProduct(id) {
-        axios.delete(`${this.$apiUrl}/products/${id}`)
-          .then(() => {
-            this.products = this.products.filter(p => p.id !== id);
-          })
-          .catch(error => {
-            console.error('There was an error!', error);
-          });
+    headers: [
+      { title: 'Product Name', value: 'name', align: 'start', sortable: true },
+      { title: 'Price', value: 'price', align: 'end', sortable: true },
+      { title: 'Actions', value: 'actions', sortable: false }
+    ],
+    search: '',
+    serverItems: [],
+    loading: true,
+    totalItems: 0,
+  }),
+  methods: {
+    loadItems({ page, itemsPerPage, sortBy, sortDesc }) {
+      this.loading = true;
+      const sortOrder = sortDesc && sortDesc.length > 0 ? 'desc' : 'asc';
+      const sortByParam = sortBy && sortBy.length > 0 ? sortBy[0] : 'name';
+      axios.get('http://localhost:5001/products', {
+        params: { page, itemsPerPage, sortBy: sortByParam, sortOrder, search: this.search }
+      }).then(response => {
+        this.serverItems = response.data.items;
+        this.totalItems = response.data.total;
+        this.loading = false;
+      }).catch(error => {
+        console.error('Error fetching products:', error);
+        this.loading = false;
+      });
+    },
+    addProduct() {
+      if (!this.newProduct.name || !this.newProduct.price) {
+        alert("Please fill in all fields.");
+        return;
       }
+      axios.post('http://localhost:5001/products', this.newProduct)
+        .then(() => {
+          this.newProduct = { name: '', price: '' }; // Reset form
+          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+        })
+        .catch(error => console.error('Error adding product:', error));
     },
-    mounted() {
-      this.fetchProducts();
+    deleteProduct(productId) {
+      axios.delete(`http://localhost:5001/products/${productId}`)
+        .then(() => {
+          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+        })
+        .catch(error => {
+          console.error('Error deleting product:', error);
+        });
     }
   }
-  </script>
-  
-
-  <style scoped>
-.form-group {
-  position: relative;
-  margin-bottom: 20px;
 }
-
-.form-group input {
-  width: 40%;
-  padding: 10px;
-  font-size: 16px;
-}
-
-.form-group label {
-  position: relative; 
-  left: 10px;
-  top: 10px;
-  color: #666;
-  transition: all 0.3s ease;
-  pointer-events: none;
-}
-
-.form-group input:focus + label,
-.form-group input:not(:placeholder-shown) + label {
-  top: -10px;
-  left: 10px;
-  font-size: 12px;
-  color: #333;
-}
-</style>
-
-  
+</script>

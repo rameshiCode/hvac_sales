@@ -1,5 +1,10 @@
 {
   "dependencies": {
+    "@jamescoyle/vue-icon": "^0.1.2",
+    "@mdi/js": "^7.4.47",
     "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@mdi/font": "^7.4.47"
   }
 }

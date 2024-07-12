@@ -17,7 +17,7 @@ export default {
   data() {
     return {
       file: null,
-      $apiUrl: 'http://localhost:5000'  // Ensure this is correctly set
+      $apiUrl: 'http://localhost:5001'  // Ensure this is correctly set
     };
   },
   methods: {
