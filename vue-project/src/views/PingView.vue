@@ -16,7 +16,7 @@
     },
     methods: {
       sendPing() {
-        axios.get('http://localhost:5001/ping')
+        axios.get('/api/ping')
           .then(result => {
             this.response = result.data;
           })
