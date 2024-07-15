@@ -1,49 +1,113 @@
 <template>
-    <div>
-      <h1>Add Client</h1>
-      <form @submit.prevent="submitForm">
-        <div>
-          <label for="name">Name:</label>
-          <input type="text" id="name" v-model="client.name" required>
-        </div>
-        <div>
-          <label for="phone">Phone Number:</label>
-          <input type="text" id="phone" v-model="client.phone" required>
-        </div>
-        <div>
-          <label for="email">Email Address:</label>
-          <input type="email" id="email" v-model="client.email" required>
-        </div>
-        <div>
-          <label for="address">Address:</label>
-          <input type="text" id="address" v-model="client.address" required>
-        </div>
-        <button type="submit">Submit</button>
-      </form>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        client: {
-          name: '',
-          phone: '',
-          email: '',
-          address: ''
-        }
-      };
-    },
-    methods: {
-      submitForm() {
-        // Here you can handle the form submission,
-        // For now, we'll just log the client object to the console.
-        console.log(this.client);
-        // Redirect to Home page after form submission
-        this.$router.push('/');
+  <v-card>
+    <v-card-title>
+      Add New Client
+    </v-card-title>
+    <v-container>
+      <v-form ref="form" v-model="valid">
+        <v-row>
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="client.name"
+              :rules="nameRules"
+              label="Client Name"
+              required
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="client.phone"
+              :rules="phoneRules"
+              label="Phone"
+              required
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="client.email"
+              :rules="emailRules"
+              label="Email"
+              required
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="client.address"
+              :rules="addressRules"
+              label="Address"
+              required
+            ></v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-btn
+              :disabled="!valid"
+              color="success"
+              @click="submit"
+            >
+              Add Client
+            </v-btn>
+            <v-btn
+              color="error"
+              @click="reset"
+            >
+              Reset
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-form>
+    </v-container>
+  </v-card>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  data() {
+    return {
+      valid: true,
+      client: {
+        name: '',
+        phone: '',
+        email: '',
+        address: ''
+      },
+      nameRules: [
+        v => !!v || 'Name is required'
+      ],
+      phoneRules: [
+        v => !!v || 'Phone number is required',
+        v => (v && v.length >= 10) || 'Phone number must be at least 10 digits'
+      ],
+      emailRules: [
+        v => !!v || 'E-mail is required',
+        v => /.+@.+\..+/.test(v) || 'E-mail must be valid'
+      ],
+      addressRules: [
+        v => !!v || 'Address is required'
+      ],
+    };
+  },
+  methods: {
+    submit() {
+      if (this.$refs.form.validate()) {
+        axios.post(`${this.$apiUrl}/clients`, this.client)
+          .then(() => {
+            this.$emit('update');
+            this.reset();
+            this.$emit('notification', 'Client added successfully', 'success');
+          })
+          .catch(error => {
+            console.error('Error adding client:', error);
+            this.$emit('notification', 'Error adding client', 'error');
+          });
       }
+    },
+    reset() {
+      this.$refs.form.reset();
     }
-  };
-  </script>
-  
+  }
+};
+</script>

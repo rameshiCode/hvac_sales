@@ -1,10 +1,13 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
+import path from 'path'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
+import Components from 'unplugin-vue-components/vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import ViteComponents from 'vite-plugin-components';
+
+// import ViteComponents from 'vite-plugin-components'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,7 +15,7 @@ export default defineConfig({
     vue(),
     vueJsx(),
     vueDevTools(),
-    ViteComponents()
+    Components({}),
   ],
   resolve: {
     alias: {

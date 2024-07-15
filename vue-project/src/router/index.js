@@ -6,28 +6,29 @@ import Login from '../components/Login.vue';
 import ProductManagement from '../components/ProductManagement.vue';
 import ClientForm from '@/components/ClientForm.vue';
 import ProductManipulation from '../components/ProductManipulation.vue';
+import ClientsManagement from '../components/ClientManagement.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
+      name: 'Home',
       component: Home
     },
     {
       path: '/ping',
-      name: 'ping',
+      name: 'Ping',
       component: PingView
     },
     {
       path: '/sign-up',
-      name: 'sign-up',
-      component: SignUp  // Fixed typo here
+      name: 'SignUp',
+      component: SignUp
     },
     {
       path: '/login',
-      name: 'login',
+      name: 'Login',
       component: Login
     },
     {
@@ -43,12 +44,12 @@ const router = createRouter({
     {
       path: '/product-manipulation',
       name: 'ProductManipulation',
-      component: ProductManipulation,
+      component: ProductManipulation
     },
     {
-      path: '/product-manipulation',
-      name: 'ProductManipulation',
-      component: ProductManipulation, 
+      path: '/clients',
+      name: 'ClientsManagement',
+      component: ClientsManagement
     }
   ]
 })

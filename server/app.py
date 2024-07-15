@@ -4,7 +4,7 @@ import csv
 import sqlite3
 import pandas as pd
 from flask_cors import CORS
-from models.models import Product, User, db  # Import User from models.models
+from models.models import Product, User, db, Client # Import User from models.models
 from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
@@ -29,13 +29,69 @@ with app.app_context():
 def ping_pong():
     return jsonify('pong!')
 
-@app.route('/add_client', methods=['POST'])
+# handle clients
+@app.route('/clients', methods=['GET'])
+def get_clients():
+    page = request.args.get('page', 1, type=int)
+    items_per_page = request.args.get('itemsPerPage', 10, type=int)
+    search = request.args.get('search', '')
+    # sort_by = request.args.get('sortBy', 'name')
+    # sort_order = request.args.get('sortOrder', 'asc')
+    sort_by = request.args.getlist('sortBy[0][key]', type=str)
+    sort_order = request.args.getlist('sortBy[0][order]', type=str)
+    print("8=============D")
+    print(f"{search=} {sort_by=} {sort_order=}")
+    print("8=============D") 
+    # print(sort_order)
+    # print(f"{page=}{items_per_page=}{sort_by=}{sort_order=}{search=}")
+    # Query filtering based on search input
+    query = Client.query
+    if search:
+        query = query.filter(Client.name.ilike(f'%{search}%') | Client.email.ilike(f'%{search}%'))
+    
+    # Handle sorting
+    if sort_by and sort_order:
+        if sort_order[0] == 'asc':
+            query = query.order_by(getattr(Client, sort_by[0]).asc())
+        else:
+            query = query.order_by(getattr(Client, sort_by[0]).desc())
+    paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
+    clients = paginated_result.items
+    print(clients)
+    for client in clients:
+        print(client)
+    total = paginated_result.total
+
+    return jsonify({
+        'items': [{'id': c.id, 'name': c.name, 'phone': c.phone, 'address': c.address, 'email': c.email} for c in clients],
+        'total': total
+    })
+
+@app.route('/clients', methods=['POST'])
 def add_client():
     data = request.json
-    new_client = User(name=data['name'], phone=data['phone'], address=data['address'], email=data['email'])
+    new_client = Client(name=data['name'], phone=data['phone'], address=data['address'], email=data['email'])
     db.session.add(new_client)
     db.session.commit()
-    return jsonify({"message": "Client added successfully!"})
+    return jsonify({'id': new_client.id, 'name': new_client.name}), 201
+
+@app.route('/clients/<int:id>', methods=['PUT'])
+def update_client(id):
+    client = Client.query.get_or_404(id)
+    data = request.json
+    client.name = data.get('name', client.name)
+    client.phone = data.get('phone', client.phone)
+    client.email = data.get('email', client.email)
+    client.address = data.get('address', client.address)
+    db.session.commit()
+    return jsonify({'id': client.id, 'name': client.name}), 200
+
+@app.route('/clients/<int:id>', methods=['DELETE'])
+def delete_client(id):
+    client = Client.query.get_or_404(id)
+    db.session.delete(client)
+    db.session.commit()
+    return jsonify({'message': 'Client deleted'}), 204
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -63,7 +119,6 @@ def login():
     if user and user.check_password(data.get('password')):
         return jsonify({'message': 'Login successful', 'user': user.username}), 200
     return jsonify({'message': 'Invalid username or password'}), 401
-
 
 @app.route('/import', methods=['POST'])
 def import_products():
@@ -131,32 +186,49 @@ def delete_product(product_id):
     db.session.commit()
     return jsonify({'message': 'Product deleted'}), 204
 
-@app.route('/products', methods=['GET', 'POST'])
+@app.route('/products', methods=['GET'])
 def get_products():
     page = request.args.get('page', 1, type=int)
     items_per_page = request.args.get('itemsPerPage', 10, type=int)
-    search = request.args.get('search', '')  # Retrieve the search query parameter
-    sort_by = request.args.get('sortBy', 'name')
-    sort_order = request.args.get('sortOrder', 'asc')
-    # Query filtering based on search input
+    search = request.args.get('search', '')
+    sort_by = request.args.getlist('sortBy[0][key]', type=str)
+    sort_order = request.args.getlist('sortBy[0][order]', type=str)
+    print(f"{search=}{sort_by=}{sort_order=}")
+    # Build the initial query
     query = Product.query
+
+    # Filter based on search term
     if search:
-        query = query.filter((Product.name.like(f'%{search}%')) | (Product.price.like(f'%{search}%')))
-        # query = query.filter(Product.name.ilike(f'%{search}%'))  # Assuming you're searching in the 'name' field
-    if sort_order == 'asc':
-        query = query.order_by(getattr(Product, sort_by).asc())
-    else:
-        query = query.order_by(getattr(Product, sort_by).desc())
-    # Pagination after filtering
+        query = query.filter((Product.name.like(f'%{search}%')) | (Product.description.like(f'%{search}%')))
+    from sqlalchemy import func
+    # Handle sorting
+    if sort_by and sort_order:
+        if sort_order[0] == 'asc':
+            query = query.order_by(func.lower(getattr(Product, sort_by[0])).asc())
+        else:
+            query = query.order_by(func.lower(getattr(Product, sort_by[0])).desc())
+    # Pagination
     paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
+    # print(paginated_result)
     products = paginated_result.items
+    for product in products:
+        print(product)
     total = paginated_result.total
 
+    # Prepare response
     return jsonify({
         'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
         'total': total
     })
 
+@app.route('/products/<int:id>', methods=['PUT'])
+def update_product(id):
+    product = Product.query.get_or_404(id)
+    data = request.json
+    product.name = data.get('name', product.name)
+    product.price = data.get('price', product.price)
+    db.session.commit()
+    return jsonify({'id': product.id, 'name': product.name, 'price': product.price}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

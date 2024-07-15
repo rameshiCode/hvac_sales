@@ -13,6 +13,7 @@
           <router-link class="nav-link btn-hdr" to="/product-management">ProductManagement</router-link>
           <router-link class="nav-link btn-hdr" to="/product-manipulation">Product Manipulation</router-link>
           <router-link class="nav-link btn-hdr" to="/add-client">Add Client</router-link>
+          <router-link class="nav-link btn-hdr" to="/clients">Client Management</router-link>
         
         </nav>
       </div>

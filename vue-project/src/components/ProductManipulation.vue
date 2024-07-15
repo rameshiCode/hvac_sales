@@ -27,9 +27,17 @@
         <v-col cols="12" sm="2">
           <v-btn color="primary" @click="addProduct" block>Add Product</v-btn>
         </v-col>
+        <v-text-field
+              v-model="search"
+              append-icon="mdi-magnify"
+              label="Search Products"
+              single-line
+              hide-details
+              @input="loadItems"
+            ></v-text-field>
       </v-row>
     </v-container>
-
+    
     <v-data-table
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
@@ -40,39 +48,67 @@
       @update:options="loadItems"
       class="elevation-1"
     >
-      <template v-slot:top>
+      <template v-slot:item.name="{ item }">
         <v-text-field
-          v-model="search"
-          append-icon="mdi-magnify"
-          label="Search"
-          single-line
+          v-if="editItem === item.id"
+          v-model="editable.name"
+          dense
+          flat
           hide-details
-          class="mb-3"
         ></v-text-field>
+        <span v-else @dblclick="enableEditing(item)">{{ item.name }}</span>
+      </template>
+      <template v-slot:item.price="{ item }">
+        <v-text-field
+          v-if="editItem === item.id"
+          v-model="editable.price"
+          type="number"
+          prefix="$"
+          dense
+          flat
+          hide-details
+        ></v-text-field>
+        <span v-else @dblclick="enableEditing(item)">{{ item.price }}</span>
       </template>
       <template v-slot:item.actions="{ item }">
         <v-icon small class="mr-2" @click="deleteProduct(item.id)">
           mdi-delete
+        </v-icon>
+        <v-icon small
+          v-if="editItem === item.id"
+          @click="saveEdit(item)"
+        >
+          mdi-content-save
+        </v-icon>
+        <v-icon small
+          v-else
+          @click="enableEditing(item)"
+        >
+          mdi-pencil
         </v-icon>
       </template>
     </v-data-table>
   </v-card>
 </template>
 
+
 <script>
 import axios from 'axios';
 
 export default {
   data: () => ({
-    itemsPerPage: 5,
     newProduct: {
       name: '',
       price: ''
     },
+    editable: {},
+    editItem: null,
+    // table 
+    itemsPerPage: 5,
     headers: [
-      { title: 'Product Name', value: 'name', align: 'start', sortable: true },
-      { title: 'Price', value: 'price', align: 'end', sortable: true },
-      { title: 'Actions', value: 'actions', sortable: false }
+      { title: 'Product Name', key: 'name', align: 'start', sortable: true },
+      { title: 'Price', key: 'price', align: 'end', sortable: true },
+      { title: 'Actions', key: 'actions', sortable: false }
     ],
     search: '',
     serverItems: [],
@@ -80,12 +116,13 @@ export default {
     totalItems: 0,
   }),
   methods: {
-    loadItems({ page, itemsPerPage, sortBy, sortDesc }) {
+    loadItems ({ page, itemsPerPage, sortBy }) {
       this.loading = true;
-      const sortOrder = sortDesc && sortDesc.length > 0 ? 'desc' : 'asc';
-      const sortByParam = sortBy && sortBy.length > 0 ? sortBy[0] : 'name';
+      console.log(page);
+      console.log(itemsPerPage);
+      console.log(sortBy);
       axios.get('http://localhost:5001/products', {
-        params: { page, itemsPerPage, sortBy: sortByParam, sortOrder, search: this.search }
+        params: { page, itemsPerPage, sortBy, search: this.search }
       }).then(response => {
         this.serverItems = response.data.items;
         this.totalItems = response.data.total;
@@ -114,6 +151,21 @@ export default {
         })
         .catch(error => {
           console.error('Error deleting product:', error);
+        });
+    },
+    enableEditing(item) {
+      this.editable = {...item};
+      this.editItem = item.id;
+    },
+    saveEdit(item) {
+      axios.put(`http://localhost:5001/products/${item.id}`, this.editable)
+        .then(() => {
+          this.editItem = null;
+          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+        })
+        .catch(error => {
+          console.error('Error updating product:', error);
+          this.editItem = null;
         });
     }
   }

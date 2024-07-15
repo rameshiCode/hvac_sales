@@ -5,6 +5,8 @@
     "axios": "^1.7.2"
   },
   "devDependencies": {
-    "@mdi/font": "^7.4.47"
+    "@mdi/font": "^7.4.47",
+    "lodash.debounce": "^4.0.8",
+    "vite-plugin-components": "^0.13.3"
   }
 }
