@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../components/Home.vue'; // Adjust the path if necessary
+import Home from '../components/Home.vue';
 import PingView from '../views/PingView.vue';
 import SignUp from '@/components/SignUp.vue';
 import Login from '../components/Login.vue';
@@ -7,6 +7,8 @@ import ProductManagement from '../components/ProductManagement.vue';
 import ClientForm from '@/components/ClientForm.vue';
 import ProductManipulation from '../components/ProductManipulation.vue';
 import ClientsManagement from '../components/ClientManagement.vue';
+import ProductCategorySelection from '@/components/ProductCategorySelection.vue';
+import ProductSelection from '@/components/ProductSelection.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +52,18 @@ const router = createRouter({
       path: '/clients',
       name: 'ClientsManagement',
       component: ClientsManagement
+    },
+    {
+      path: '/select-category/:clientId',
+      name: 'ProductCategorySelection',
+      component: ProductCategorySelection,
+      props: true
+    },
+    {
+      path: '/select-products/:clientId/:categoryName',
+      name: 'ProductSelection',
+      component: ProductSelection,
+      props: true
     }
   ]
 })

@@ -29,3 +29,4 @@ app.use(vuetify)
 
 app.mount('#app')
 
+// Vue.config.devtools = true;

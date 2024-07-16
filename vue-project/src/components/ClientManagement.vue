@@ -88,24 +88,18 @@ import axios from 'axios';
 
 export default {
   data() {
-    return{
+    return {
       clients: [],
       loading: true,
       dialog: false,
       editable: {},
       editItem: null,
-      // formTitle: '',
       search: '',
       itemsPerPage: 5,
       sortOrder: true,
       sortBy: ['name'],
       totalItems: 0,
       page: 1,
-      // options: {
-      //   page: 1,
-      //   sortBy: ['name'],
-      //   sortDesc: [false],
-      // },
       headers: [
         { title: 'Client Name', value: 'name', sortable: true },
         { title: 'Phone', value: 'phone' },
@@ -115,17 +109,9 @@ export default {
       ],
     }
   },
-  // watch: {
-  //   'options.itemsPerPage': function(newVal, oldVal) {
-  //     if (newVal !== oldVal) {
-  //       this.fetchClients();
-  //     }
-  //   }
-  // },
   methods: {
     loadItems() {
       this.loading = true;
-      this.sortOrder = !this.sortOrder;
       const sortOrder = this.sortOrder ? 'asc' : 'desc';
       const params = {
         page: this.page,
@@ -144,11 +130,35 @@ export default {
         })
         .finally(() => {
           this.loading = false;
-          console.log(params)
         });
     },
-    updateOptions(newOptions) {
-      this.options = {...this.options, ...newOptions};
+    saveClient(clientData) {
+      axios.post(`${this.$apiUrl}/clients`, clientData)
+        .then(response => {
+          if (response.status === 201) {
+            const clientId = response.data.id;
+            this.$router.push({ name: 'ProductCategorySelection', params: { clientId }});
+          } else {
+            console.error('Unexpected response:', response);
+          }
+        })
+        .catch(error => {
+          console.error('Error adding client:', error);
+        });
+    },
+    save() {
+      if (this.editItem) {
+        axios.put(`${this.$apiUrl}/clients/${this.editItem}`, this.editable)
+          .then(() => {
+            this.loadItems();
+            this.close();
+          })
+          .catch(error => {
+            console.error('Error saving client:', error);
+          });
+      } else {
+        this.saveClient(this.editable);
+      }
     },
     deleteClient(clientId) {
       axios.delete(`${this.$apiUrl}/clients/${clientId}`)
@@ -160,7 +170,7 @@ export default {
         });
     },
     enableEditing(client) {
-      this.editable = {...client};
+      this.editable = { ...client };
       this.editItem = client.id;
       this.dialog = true;
       this.formTitle = 'Edit Client';
@@ -171,28 +181,12 @@ export default {
       this.dialog = true;
       this.formTitle = 'Add New Client';
     },
-    save() {
-      const method = this.editItem ? 'put' : 'post';
-      const url = this.editItem ? `${this.$apiUrl}/clients/${this.editItem}` : `${this.$apiUrl}/clients`;
-
-      axios[method](url, this.editable)
-        .then(() => {
-          this.loadItems();
-          this.close();
-        })
-        .catch(error => {
-          console.error('Error saving client:', error);
-        });
-    },
     close() {
       this.dialog = false;
     },
   },
-
   mounted() {
-  this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: ['name'], sortDesc: [false] });
-}
-
+    this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: ['name'], sortDesc: [false] });
+  }
 };
 </script>
-
