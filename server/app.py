@@ -1,28 +1,24 @@
-import os 
-import io
 import csv
+import io
+import os
 import sqlite3
+
 import pandas as pd
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-from models.models import Product, User, db, Client # Import User from models.models
-from flask import Flask, request, jsonify, send_file
+from models.models import Client, Product, db
 from sqlalchemy import func
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'database.db')
-app.config['SQLALCHEMY_BINDS'] = {
-    'users': 'sqlite:///users.db',
-    'products': 'sqlite:///products.db',
-    'clients': 'sqlite:///clients.db'
-}
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'clients.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
 with app.app_context():
+    # db.drop_all()  # Drop all tables
     db.create_all()
 
 # Routes
@@ -36,16 +32,8 @@ def get_clients():
     page = request.args.get('page', 1, type=int)
     items_per_page = request.args.get('itemsPerPage', 10, type=int)
     search = request.args.get('search', '')
-    # sort_by = request.args.get('sortBy', 'name')
-    # sort_order = request.args.get('sortOrder', 'asc')
     sort_by = request.args.getlist('sortBy[0][key]', type=str)
     sort_order = request.args.getlist('sortBy[0][order]', type=str)
-    print("8=============D")
-    print(f"{search=} {sort_by=} {sort_order=}")
-    print("8=============D") 
-    # print(sort_order)
-    # print(f"{page=}{items_per_page=}{sort_by=}{sort_order=}{search=}")
-    # Query filtering based on search input
     query = Client.query
     if search:
         query = query.filter(Client.name.ilike(f'%{search}%') | Client.email.ilike(f'%{search}%'))
@@ -56,11 +44,9 @@ def get_clients():
             query = query.order_by(getattr(Client, sort_by[0]).asc())
         else:
             query = query.order_by(getattr(Client, sort_by[0]).desc())
+
     paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
     clients = paginated_result.items
-    print(clients)
-    for client in clients:
-        print(client)
     total = paginated_result.total
 
     return jsonify({
@@ -94,33 +80,6 @@ def delete_client(id):
     db.session.commit()
     return jsonify({'message': 'Client deleted'}), 204
 
-@app.route('/signup', methods=['POST'])
-def signup():
-    data = request.get_json()
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-    
-    if User.query.filter_by(username=username).first() is not None:
-        return jsonify({'message': 'Username already taken'}), 400
-    if User.query.filter_by(email=email).first() is not None:
-        return jsonify({'message': 'Email already registered'}), 400
-
-    new_user = User(username=username, email=email)
-    new_user.set_password(password)
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'message': f'User {username} registered successfully!'}), 201
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    user = User.query.filter_by(username=data.get('username')).first()
-
-    if user and user.check_password(data.get('password')):
-        return jsonify({'message': 'Login successful', 'user': user.username}), 200
-    return jsonify({'message': 'Invalid username or password'}), 401
-
 @app.route('/import', methods=['POST'])
 def import_products():
     # Check if the post request has the file part
@@ -131,8 +90,6 @@ def import_products():
         return jsonify({'error': 'No selected file'}), 400
     
     try:
-        # Assuming the CSV has columns 'name' and 'price'
-        # can you ignore erro in case of any
         df = pd.read_excel(file)
         df['price'] = df['price'].astype(dtype=float, errors='ignore')
         df['name'] = df['name'].astype(dtype=str, errors='ignore')
@@ -220,7 +177,12 @@ def get_products():
         print(f"Error: {e}")
         return jsonify({'error': 'An error occurred'}), 500
 
-
+@app.route('/products/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    return jsonify({'message': 'Product deleted'}), 204
 
 @app.route('/products/<int:id>', methods=['PUT'])
 def update_product(id):
