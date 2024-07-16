@@ -6,6 +6,7 @@ import pandas as pd
 from flask_cors import CORS
 from models.models import Product, User, db, Client # Import User from models.models
 from flask import Flask, request, jsonify, send_file
+from sqlalchemy import func
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -179,47 +180,57 @@ def add_product():
     db.session.commit()
     return jsonify({'id': new_product.id, 'name': new_product.name, 'price': new_product.price}), 201
 
-@app.route('/products/<int:product_id>', methods=['DELETE'])
-def delete_product(product_id):
-    product = Product.query.get_or_404(product_id)
-    db.session.delete(product)
-    db.session.commit()
-    return jsonify({'message': 'Product deleted'}), 204
-
 @app.route('/products', methods=['GET'])
 def get_products():
-    page = request.args.get('page', 1, type=int)
-    items_per_page = request.args.get('itemsPerPage', 10, type=int)
-    search = request.args.get('search', '')
-    sort_by = request.args.getlist('sortBy[0][key]', type=str)
-    sort_order = request.args.getlist('sortBy[0][order]', type=str)
-    print(f"{search=}{sort_by=}{sort_order=}")
-    # Build the initial query
-    query = Product.query
+    try:
+        # Retrieve query parameters
+        page = request.args.get('page', 1, type=int)
+        items_per_page = request.args.get('itemsPerPage', 10, type=int)
+        search = request.args.get('search', '')
+        sort_by = request.args.getlist('sortBy[0][key]', type=str)
+        sort_order = request.args.getlist('sortBy[0][order]', type=str)
 
-    # Filter based on search term
-    if search:
-        query = query.filter((Product.name.like(f'%{search}%')) | (Product.description.like(f'%{search}%')))
-    from sqlalchemy import func
-    # Handle sorting
-    if sort_by and sort_order:
-        if sort_order[0] == 'asc':
-            query = query.order_by(func.lower(getattr(Product, sort_by[0])).asc())
-        else:
-            query = query.order_by(func.lower(getattr(Product, sort_by[0])).desc())
-    # Pagination
-    paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
-    # print(paginated_result)
-    products = paginated_result.items
-    for product in products:
-        print(product)
-    total = paginated_result.total
+        # print(f"{search=}, {sort_by=}, {sort_order=}")
 
-    # Prepare response
-    return jsonify({
-        'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
-        'total': total
-    })
+        # Build the initial query
+        query = Product.query
+
+        # Filter based on search term
+        if search:
+            query = query.filter(Product.name.ilike(f'%{search}%'))
+
+        # Handle sorting
+        if sort_by and sort_order:
+            if sort_order[0] == 'asc':
+                query = query.order_by(func.lower(getattr(Product, sort_by[0])).asc())
+            else:
+                query = query.order_by(func.lower(getattr(Product, sort_by[0])).desc())
+
+        # Pagination
+        paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
+        products = paginated_result.items
+        total = paginated_result.total
+
+        # # Log the fetched products and total count
+        # print(f"Fetched products: {products}")
+        # print(f"Total products: {total}")
+
+        # Prepare response
+        response = {
+            'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
+            'total': total
+        }
+
+        # print(f"Response: {response}")
+
+        return jsonify(response)
+    
+    except Exception as e:
+        # Log the exception
+        print(f"Error occurred: {e}")
+        return jsonify({'error': 'An error occurred while fetching products'}), 500
+
+
 
 @app.route('/products/<int:id>', methods=['PUT'])
 def update_product(id):
