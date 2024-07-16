@@ -190,8 +190,6 @@ def get_products():
         sort_by = request.args.getlist('sortBy[0][key]', type=str)
         sort_order = request.args.getlist('sortBy[0][order]', type=str)
 
-        # print(f"{search=}, {sort_by=}, {sort_order=}")
-
         # Build the initial query
         query = Product.query
 
@@ -211,24 +209,16 @@ def get_products():
         products = paginated_result.items
         total = paginated_result.total
 
-        # # Log the fetched products and total count
-        # print(f"Fetched products: {products}")
-        # print(f"Total products: {total}")
-
         # Prepare response
         response = {
             'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
             'total': total
         }
 
-        # print(f"Response: {response}")
-
-        return jsonify(response)
-    
+        return jsonify(response)  # Ensure this line is included to return the JSON response
     except Exception as e:
-        # Log the exception
-        print(f"Error occurred: {e}")
-        return jsonify({'error': 'An error occurred while fetching products'}), 500
+        print(f"Error: {e}")
+        return jsonify({'error': 'An error occurred'}), 500
 
 
 
