@@ -9,15 +9,16 @@
         }
         table {
             width: 100%;
-            border-collapse: collapse; /* Makes the borders of the cells collapse into one */
+            border-collapse: collapse;
+            border-radius: 7px;
         }
         th, td {
-            border: 1px solid #dddddd; /* Light grey border */
+            border: 1px solid #dddddd;
             text-align: left;
             padding: 8px;
         }
         th {
-            background-color: #f2f2f2; /* Light grey background for headers */
+            background-color: #f2f2f2;
         }
         .total-row th {
             text-align: right;
@@ -26,30 +27,37 @@
         .total-row td {
             font-weight: bold;
         }
+        .pret {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
-    <h1>Offer for {{ client.name }}</h1>
+    <h1>Ofertă pentru {{ client.name }}</h1>
     <table>
         <tr>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Unit Price</th>
+            <th>Produs</th>
+            <th>Cantitate</th>
+            <th>Preț Unitar</th>
+            <th>Preț Total</th>
             <th>Discount</th>
-            <th>Final Price</th>
+            <th>Preț Redus</th> 
         </tr>
         {% for product in products %}
         <tr>
             <td>{{ product.name }}</td>
             <td>{{ product.quantity }}</td>
-            <td>{{ product.price }}</td>
-            <td>{{ product.discount }}%</td>
-            <td>{{ product.final_price }}</td>
-        </tr>
+            <td>{{ '%0.2f' | format(product.price|float) }}</td>
+            <td>{{ '%0.2f' | format(product.total_price|float) }}</td>
+            <td>{% if product.discount > 0 %}{{ '%0.2f' | format(product.discount|float) }}%{% endif %}</td>
+            <td>{{ '%0.2f' | format(product.final_price|float) }}</td>
+        </tr> 
         {% endfor %}
+        <tr class="total-row pret">
+            <th colspan="6">Preț Total: {{ total_price }}</th>
+        </tr>
         <tr class="total-row">
-            <th colspan="4">Total Price</th>
-            <td>{{ final_price_after_overall_discount }}</td>
+            <th colspan="6">Preț Redus: {{ final_price }} </th> 
         </tr>
     </table>
 </body>

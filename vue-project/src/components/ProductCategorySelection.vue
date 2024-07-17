@@ -5,27 +5,24 @@
     </div>
   </template>
   
-<script>
+  <script>
   export default {
+    props: ['clientId', 'clientEmail'],
     data() {
-    return {
-      clientId: this.$route.params.clientId
-    };
-    },
-    watch: {
-      '$route.params.clientId'(newClientId) {
-        this.clientId = newClientId;
-      }
+      return {};
     },
     created() {
-      console.log('Received Client ID:', this.clientId);  // Debugging line to check the received clientId
+      console.log('Received Client ID:', this.clientId);
+      console.log('Received Client Email:', this.clientEmail);
     },
     methods: {
       selectCategory(categoryName) {
-        // Here you can pass the category name and client ID to the next component
-        this.$router.push({ name: 'ProductSelection', params: { categoryName, clientId: this.$route.params.clientId }});
+        this.$router.push({ name: 'ProductSelection', params: { categoryName, clientId: this.clientId, clientEmail: this.clientEmail }});
       },
     }
-}
-</script>
+  }
+  </script>
+  
+  
+  
   

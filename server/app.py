@@ -4,24 +4,97 @@ import os
 import sqlite3
 
 import pandas as pd
-from flask import Flask, jsonify, request, send_file, render_template_string, make_response, render_template
+import pdfkit
+from dotenv import load_dotenv
+from flask import (Flask, Request, jsonify, make_response, redirect,
+                   render_template, render_template_string, request, send_file,
+                   session, url_for)
 from flask_cors import CORS
+from flask_mail import Mail, Message
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 from models.models import Client, Product, db
 from sqlalchemy import func
-import pdfkit
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+load_dotenv()  # This loads the environment variables from .env file
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY')  # Load secret key from environment variable
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'clients.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-CORS(app, resources={r'/*': {'origins': '*'}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 with app.app_context():
-    # db.drop_all()  # Drop all tables
     db.create_all()
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+mail = Mail(app)
+
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+CLIENT_SECRETS_FILE = 'client_secret_410792550420-qet9eepo4ih2quir69palk19kc3mutgh.apps.googleusercontent.com.json'
+
+
+@app.route('/send_offer', methods=['POST'])
+def send_offer():
+    data = request.json
+    recipient_email = data.get('clientEmail')
+    products = data.get('products')
+    discount = data.get('overallDiscount', 0)    
+    discount = 0 if discount == '' else float(discount)
+    # client
+    client_id = data.get('clientId')
+    client_name = Client.query.get_or_404(client_id)
+    client = {'id': client_id, 'name': str(client_name.name).title()}
+    print('8============D')
+    print(f"{discount=} {client_name=}")
+    print('8============D')
+    
+    for product in products:
+        product_discount = product["discount"]
+        product_discount = 0.0 if product_discount == '' else float(product_discount)
+        product["price"] = float(product["price"])
+        product['discount'] = product_discount
+        product['total_price'] = round(product["quantity"] * product["price"], 2)
+        product['final_price'] = round(product['total_price'] * (1 - (float(product_discount) / 100)), 2)
+    
+    total_price, final_price = calculate_final_price(products, discount)
+
+    # Render the HTML template with data
+    html = render_template(
+        'offer_template.html', 
+        client=client, 
+        products=products, 
+        total_price=total_price,
+        final_price=final_price,
+        overall_discount=discount,
+    )
+
+    msg = Message("Your Special Offer", sender=app.config['MAIL_USERNAME'], recipients=[recipient_email])
+    msg.html = html  # Set the email content to the rendered HTML
+    mail.send(msg)
+    
+    return jsonify({"status": "Email sent successfully!"})
+
+def calculate_final_price(products, overall_discount):
+    # Implement your logic to calculate the final price after applying the overall discount
+    total_price = sum(p['price'] for p in products)
+    final_price = total_price * (1 - float(overall_discount) / 100)
+    return round(total_price, 2), round(final_price, 2)
+
+# with app.open_resource("image.png") as fp:
+#     msg.attach("image.png", "image/png", fp.read())
 
 # Routes
 @app.route('/ping', methods=['GET'])
@@ -60,9 +133,10 @@ def get_clients():
 def add_client():
     data = request.json
     new_client = Client(name=data['name'], phone=data['phone'], address=data['address'], email=data['email'])
+    print(new_client)
     db.session.add(new_client)
     db.session.commit()
-    return jsonify({'id': new_client.id, 'name': new_client.name}), 201
+    return jsonify({'id': new_client.id, 'name': new_client.name, 'email': new_client.email}), 201
 
 @app.route('/clients/<int:id>', methods=['PUT'])
 def update_client(id):
@@ -213,32 +287,39 @@ def create_pdf():
 
 @app.route('/generate-offer', methods=['POST'])
 def generate_offer():
+    action = request.args.get('action', 'download')  # Get action type, default is 'download'
     data = request.get_json()
     client_id = data['clientId']
-    overall_discount = float(data.get('overallDiscount', 0))  # Convert to float and provide a default value
+    overall_discount = float(data.get('overallDiscount', 0))
     selected_products = data['products']
 
+    # Fetch client details
     client = Client.query.get_or_404(client_id)
-    
-    # Apply individual discounts and calculate final price per product
+
+    # Calculate final price for each product and the total price
     for product in selected_products:
         product['final_price'] = (product['price'] * (1 - (float(product['discount']) / 100))) * product['quantity']
-
-    # Calculate total price before overall discount
     total_price = sum(p['final_price'] for p in selected_products)
-    
-    # Apply overall discount to the sum of final prices
     final_price_after_overall_discount = total_price * (1 - (overall_discount / 100))
 
-    # Render PDF
+    # Render the HTML template with data
     rendered = render_template('offer_template.html', client=client, products=selected_products, total_price=total_price, overall_discount=overall_discount, final_price_after_overall_discount=final_price_after_overall_discount)
     
-    # Generate PDF
+    # Convert HTML to PDF
     pdf = pdfkit.from_string(rendered, False)
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'attachment; filename=offer.pdf'
-    return response
+
+    if action == 'email':
+        subject = f"Offer for {client.name}"
+        recipients = [client.email]
+        message = Message(subject, recipients=recipients, body="Please find attached the offer.")
+        message.attach("offer.pdf", "application/pdf", pdf)
+        mail.send(message)
+        return jsonify({"message": "Offer sent successfully!"}), 200
+    else:
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = 'attachment; filename=offer.pdf'
+        return response
 
 
 if __name__ == '__main__':

@@ -65,6 +65,18 @@ const router = createRouter({
       component: ProductSelection,
       props: true
     },
+    {
+      path: '/product-category-selection/:clientId/:clientEmail',
+      name: 'ProductCategorySelection',
+      component: ProductCategorySelection,
+      props: true
+    },
+    {
+      path: '/product-selection/:categoryName/:clientId/:clientEmail',
+      name: 'ProductSelection',
+      component: ProductSelection,
+      props: true
+    },
   ]
 })
 

@@ -135,9 +135,11 @@ export default {
     saveClient(clientData) {
       axios.post(`${this.$apiUrl}/clients`, clientData)
         .then(response => {
+          console.log('Client created:', response.data); // Log the response
           if (response.status === 201) {
             const clientId = response.data.id;
-            this.$router.push({ name: 'ProductCategorySelection', params: { clientId }});
+            const clientEmail = response.data.email;
+            this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
           } else {
             console.error('Unexpected response:', response);
           }
