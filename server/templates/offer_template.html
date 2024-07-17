@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Offer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse; /* Makes the borders of the cells collapse into one */
+        }
+        th, td {
+            border: 1px solid #dddddd; /* Light grey border */
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2; /* Light grey background for headers */
+        }
+        .total-row th {
+            text-align: right;
+            background-color: white;
+        }
+        .total-row td {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Offer for {{ client.name }}</h1>
+    <table>
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Discount</th>
+            <th>Final Price</th>
+        </tr>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.name }}</td>
+            <td>{{ product.quantity }}</td>
+            <td>{{ product.price }}</td>
+            <td>{{ product.discount }}%</td>
+            <td>{{ product.final_price }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <th colspan="4">Total Price</th>
+            <td>{{ final_price_after_overall_discount }}</td>
+        </tr>
+    </table>
+</body>
+</html>

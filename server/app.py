@@ -4,10 +4,12 @@ import os
 import sqlite3
 
 import pandas as pd
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, render_template_string, make_response, render_template
 from flask_cors import CORS
 from models.models import Client, Product, db
 from sqlalchemy import func
+import pdfkit
+
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -192,6 +194,52 @@ def update_product(id):
     product.price = data.get('price', product.price)
     db.session.commit()
     return jsonify({'id': product.id, 'name': product.name, 'price': product.price}), 200
+
+
+
+# Generate PDF
+config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+@app.route('/create-pdf')
+def create_pdf():
+    # HTML content
+    html_content = render_template_string('<h1>Welcome to PDF Generation</h1>')
+    # Generate PDF
+    pdf = pdfkit.from_string(html_content, False, configuration=config)
+    # Send the generated PDF as a response
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=generated.pdf'
+    return response
+
+@app.route('/generate-offer', methods=['POST'])
+def generate_offer():
+    data = request.get_json()
+    client_id = data['clientId']
+    overall_discount = float(data.get('overallDiscount', 0))  # Convert to float and provide a default value
+    selected_products = data['products']
+
+    client = Client.query.get_or_404(client_id)
+    
+    # Apply individual discounts and calculate final price per product
+    for product in selected_products:
+        product['final_price'] = (product['price'] * (1 - (float(product['discount']) / 100))) * product['quantity']
+
+    # Calculate total price before overall discount
+    total_price = sum(p['final_price'] for p in selected_products)
+    
+    # Apply overall discount to the sum of final prices
+    final_price_after_overall_discount = total_price * (1 - (overall_discount / 100))
+
+    # Render PDF
+    rendered = render_template('offer_template.html', client=client, products=selected_products, total_price=total_price, overall_discount=overall_discount, final_price_after_overall_discount=final_price_after_overall_discount)
+    
+    # Generate PDF
+    pdf = pdfkit.from_string(rendered, False)
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=offer.pdf'
+    return response
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

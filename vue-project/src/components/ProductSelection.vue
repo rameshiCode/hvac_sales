@@ -54,7 +54,9 @@
             ></v-text-field>
           </v-col>
         </v-toolbar-title>
-
+        <div style="display: flex; align-items: center;">
+          <v-btn color="primary" @click="generatePDF">Generate Offer</v-btn>
+        </div>
       </v-toolbar>
       
       <v-data-table
@@ -113,6 +115,8 @@
         products: [],
         search: '',
         overallDiscount: 0,
+        clientId: this.$route.params.clientId,
+        categoryName: this.$route.params.categoryName,
         headers: [
           { title: 'Product Name', value: 'name', align: 'start', sortable: true },
           { title: 'Quantity', value: 'quantity', align: 'center', sortable: false },
@@ -121,11 +125,16 @@
         ],
       };
     },
+    created() {
+      console.log('ProductSelection - Client ID:', this.clientId);
+      console.log('ProductSelection - Category:', this.categoryName);
+      if (!this.clientId) {
+        alert("No client selected!");
+      }
+    },
     computed: {
       filteredProducts() {
-        return this.products.filter(p =>
-          p.name.toLowerCase().includes(this.search.toLowerCase())
-        );
+        return this.products.filter(p => p.name.toLowerCase().includes(this.search.toLowerCase()));
       },
       totalDiscountedPrice() {
         let total = 0;
@@ -144,7 +153,7 @@
     },
     mounted() {
       axios
-        .get('http://localhost:5001/products')
+        .get(`${this.$apiUrl}/products`)
         .then(response => {
           this.products = response.data.items.map(item => ({
             ...item,
@@ -166,10 +175,45 @@
       },
       validateNumberTextField(value) {
         return !isNaN(value) && value >= 0 && value <= 100;
+      },
+      generatePDF() {
+        if (!this.clientId) {
+          alert("No client selected!");
+          return;
+        }
+
+        const selectedProducts = this.products.filter(p => p.quantity > 0);
+        if (selectedProducts.length === 0) {
+          alert("No products selected!");
+          return;
+        }
+
+        const requestData = {
+          clientId: this.clientId,
+          overallDiscount: this.overallDiscount,
+          products: selectedProducts
+        };
+
+        axios.post(`${this.$apiUrl}/generate-offer`, requestData, { responseType: 'blob' })
+          .then(response => {
+            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', 'ClientOffer.pdf');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            alert('PDF offer generated successfully.');  // Display success message
+          })
+          .catch(error => {
+            console.error('Error generating PDF:', error);
+            alert('There was an error generating the PDF. Please try again.');
+          });
       }
-    },
+    }
   };
   </script>
+  
   
   <style>
   .v-text-field--outlined {
