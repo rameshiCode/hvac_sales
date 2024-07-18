@@ -1,64 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="ro">
 <head>
-    <title>Offer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ofertă Exclusivă</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2a41e8;
+            font-size: 24px;
+            text-align: center;
+            border-bottom: 2px solid #2a41e8;
+            padding-bottom: 10px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            border-radius: 7px;
+            margin-top: 20px;
         }
         th, td {
             border: 1px solid #dddddd;
             text-align: left;
-            padding: 8px;
+            padding: 12px;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #2a41e8;
+            color: #ffffff;
         }
-        .total-row th {
+        .total-row th, .total-row td {
             text-align: right;
-            background-color: white;
+            background-color: transparent;
+            border: none;
         }
         .total-row td {
             font-weight: bold;
-        }
-        .pret {
             font-size: 16px;
+        }
+        .highlight {
+            color: #e85c41;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #777;
         }
     </style>
 </head>
 <body>
-    <h1>Ofertă pentru {{ client.name }}</h1>
-    <table>
-        <tr>
-            <th>Produs</th>
-            <th>Cantitate</th>
-            <th>Preț Unitar</th>
-            <th>Preț Total</th>
-            <th>Discount</th>
-            <th>Preț Redus</th> 
-        </tr>
-        {% for product in products %}
-        <tr>
-            <td>{{ product.name }}</td>
-            <td>{{ product.quantity }}</td>
-            <td>{{ '%0.2f' | format(product.price|float) }}</td>
-            <td>{{ '%0.2f' | format(product.total_price|float) }}</td>
-            <td>{% if product.discount > 0 %}{{ '%0.2f' | format(product.discount|float) }}%{% endif %}</td>
-            <td>{{ '%0.2f' | format(product.final_price|float) }}</td>
-        </tr> 
-        {% endfor %}
-        <tr class="total-row pret">
-            <th colspan="6">Preț Total: {{ total_price }}</th>
-        </tr>
-        <tr class="total-row">
-            <th colspan="6">Preț Redus: {{ final_price }} </th> 
-        </tr>
-    </table>
+    <div class="email-container">
+        <h1>Ofertă Exclusivă pentru {{ client.name }}</h1>
+        <table>
+            <tr>
+                <th>Produs</th>
+                <th>Cantitate</th>
+                <th>Preț Unitar</th>
+                <th>Preț Total</th>
+                <th>Discount</th>
+                <th>Preț Redus</th>
+            </tr>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.name }}</td>
+                <td>{{ product.quantity }}</td>
+                <td>{{ '%0.2f' | format(product.price|float) }}</td>
+                <td>{{ '%0.2f' | format(product.total_price|float) }}</td>
+                <td>{% if product.discount > 0 %}{{ '%0.2f' | format(product.discount|float) }}%{% endif %}</td>
+                <td>{{ '%0.2f' | format(product.final_price|float) }}</td>
+            </tr> 
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="5">Preț Total:</td>
+                <td>{{ total_price }}</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="5">Preț Redus:</td>
+                <td class="highlight">{{ final_price }}</td>
+            </tr>
+        </table>
+        <div class="footer">
+            Vă mulțumim că ne-ați ales!
+        </div>
+    </div>
 </body>
 </html>
