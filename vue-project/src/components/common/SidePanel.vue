@@ -2,10 +2,10 @@
     <div class="d-flex justify-content-between flex-column h-100">
         <v-list dense nav density="compact">
             <v-list-item v-if="!rail" class="text-center">
-                <img src="../../assets/logo-sistema-landscape.png" class="mx-auto w-100"/>
+                <img src="../../assets/chiwiwi_logo.png" class="mx-auto w-100"/>
             </v-list-item>
             <v-list-item v-else class="text-center">
-                <img src="../../assets/logo-sistema-small.png" style="width: 23px; height: 23px;"/>
+                <img src="../../assets/chiwiwi_logo.png" style="width: 23px; height: 23px;"/>
             </v-list-item>
 
             <v-list-item

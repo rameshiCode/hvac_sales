@@ -23,8 +23,7 @@
     <v-skeleton-loader type="card" :loading="loading">
         <v-data-table-server
             v-show="$vuetify.display.mdAndUp"
-            :headers="filterSuperUserHeaders"
-            hide-default-header
+            :headers="vHeaders"
             :items="clients"
             :expanded="expandedRows"
             :hover="true"
@@ -41,7 +40,9 @@
                 <tr style="border-bottom: 1px solid rgba(0,0,0,0.10)">
                     <template v-for="column in columns" :key="column.key">
                         <td>
-                            <span class="mr-2 cursor-pointer" style="font-weight: 700;">{{ column.title }}</span>
+                            <span class="mr-2 cursor-pointer" style="font-weight: 700;">
+                                {{ column.title }}
+                            </span>
                             <v-icon style="cursor:pointer;" v-if="column.hasMenu" size="small"
                                     class="fas fa-chevron-down">
                                 <v-menu activator="parent" :close-on-content-click="true" class="table-dropdown-menu">
@@ -66,27 +67,29 @@
             </template>
 
             <template v-slot:[`item.agent_id`]="{ item }">
-                <span>{{ parseAgentId(item.columns.agent_id) }}</span>
+                <span>
+                    {{ item.agent_id }}
+                </span>
             </template>
             <template v-slot:[`item.full_name`]="{ item }">
                 <a href="#" class="text-decoration-none" @click.prevent="goToClientDetails(item.raw.id)">{{
-                        item.columns.full_name
+                        item.full_name
                     }} </a>
             </template>
             <template v-slot:[`item.type`]="{ item }">
-                <span>{{ parseClientType(item.columns.type) }}</span>
+                <span>{{ item.type }}</span>
             </template>
             <template v-slot:[`item.modified`]="{ item }">
-                <span>{{ showDateTime(item.columns.modified) }}</span>
+                <span>{{ showDateTime(item.modified) }}</span>
             </template>
             <template v-slot:[`item.intermediate_id`]="{ item }">
-                <span>{{ parseIntermediaryId(item.columns.intermediate_id) }}</span>
+                <span>{{ parseIntermediaryId(item.intermediate_id) }}</span>
             </template>
             <template v-slot:[`item.email`]="{ item }">
-                <span>{{ item.columns.email ? item.columns.email : defaultValuePlaceholder }}</span>
+                <span>{{ item.email ? item.email : defaultValuePlaceholder }}</span>
             </template>
             <template v-slot:[`item.phone`]="{ item }">
-                <span>{{ item.columns.phone ? item.columns.phone : defaultValuePlaceholder }}</span>
+                <span>{{ item.phone ? item.phone : defaultValuePlaceholder }}</span>
             </template>
             <template v-slot:[`item.actions`]="{ item }">
                 <v-btn icon>
@@ -151,7 +154,7 @@ export default {
                     title: 'Agent',
                     align: 'start',
                     key: 'agent_id',
-                    adminColumn: true,
+                    adminColumn: false,
                     hasMenu: true,
                     menuSlotName: 'agentMenu',
                     sortKey: 'agent'
@@ -204,6 +207,7 @@ export default {
     },
     emits: ['updated-page', 'updated-items-per-page', 'updated-sorting',],
     mounted() {
+        console.log("Component mounted, vHeaders:", this.vHeaders);
         this.recentLocations = JSON.parse(sessionStorage.getItem('myRecentLocations'))
         emitter.on('client-updated', () => {
             this.showClientDialog = false;

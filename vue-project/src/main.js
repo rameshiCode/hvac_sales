@@ -36,11 +36,11 @@ import vuetify from "@/components/plugins/vuetify";
 // Custom CSS
 // import '../src/assets/css/stylesheet.css';
 
-import {setAuthToken} from './utils/apiClient';
+// import {setAuthToken} from './utils/apiClient';
 
 // After setting the token in localStorage (e.g., after successful login)
 // Call setAuthToken() to update the token in apiClient's header
-setAuthToken();
+// setAuthToken();
 
 const app = createApp(App);
 app.use(router);

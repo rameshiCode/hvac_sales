@@ -25,38 +25,40 @@ db.init_app(app)
 
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    agent_id = db.Column(db.Integer, nullable=False)
-    email = db.Column(db.String(120), nullable=True)
-    phone = db.Column(db.String(20), nullable=True)
-    type = db.Column(db.String(50), nullable=False)
-    modified = db.Column(db.DateTime, nullable=False)
+    created = db.Column(db.DateTime)
+    modified = db.Column(db.DateTime)
+    agent_name = db.Column(db.String(120))
+    agent_email = db.Column(db.String(120))
+    full_name = db.Column(db.String(120))
+    email = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    agent_id = db.Column(db.Integer)
+    notes = db.Column(db.Text)
+    cif = db.Column(db.String(50))
+    intermediate_id = db.Column(db.Integer, nullable=True)
+    type = db.Column(db.Integer)
+    created_by = db.Column(db.Integer)
 
-    def to_dict(self):
-        # return {
-        #     'id': self.id,
-        #     'intermediate_id': self.id,
-        #     'actions': 'chiwiwi',
-        #     'full_name': self.name,
-        #     'agent_id': self.agent_id,
-        #     'email': self.email,
-        #     'phone': self.phone,
-        #     'type': self.type,
-        #     'modified': self.modified.strftime('%Y-%m-%d %H:%M:%S')
-        # }
-        return {
-            'columns': {
-                'agent_id': self.agent_id,
-                'full_name': self.name,  # Assuming 'name' is the full name
-                'type': self.type,
-                'modified': self.modified.strftime('%Y-%m-%d %H:%M:%S'),
-                'email': self.email,
-                'phone': self.phone,
-                'intermediate_id': self.agent_id,  # If intermediate_id is the same as agent_id or adjust accordingly
-            },
-        }
     def __repr__(self):
-        return f'<Client {self.name}>'
+        return f'<Client {self.full_name}>'
+        
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created": self.created.isoformat(),
+            "modified": self.modified.isoformat(),
+            "agent_name": self.agent_name,
+            "agent_email": self.agent_email,
+            "full_name": self.full_name,
+            "email": self.email,
+            "phone": self.phone,
+            "agent_id": self.agent_id,
+            "notes": self.notes,
+            "cif": self.cif,
+            "intermediate_id": self.intermediate_id,
+            "type": self.type,
+            "created_by": self.created_by
+        }
 
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
@@ -71,30 +73,56 @@ def ping_pong():
 
 @app.route('/clients/')
 def get_clients():
-    print(request.args)
     page = request.args.get('page', 1, type=int)
     page_size = request.args.get('page_size', 25, type=int)
     query = Client.query
 
-    # Example of simple sorting (extend it as per your frontend requirements)
-    sort = request.args.get('sort', 'id')
-    direction = request.args.get('direction', 'asc')
-    if direction == 'desc':
-        query = query.order_by(db.desc(getattr(Client, sort)))
-    else:
-        query = query.order_by(getattr(Client, sort))
+    # Implement basic filtering if needed
+    # filters = request.args.get('filters')  # Example: filters could be used here
 
-    # Pagination
     pagination = query.paginate(page=page, per_page=page_size, error_out=False)
-    clients = pagination.items
-    total = pagination.total
+    clients = [client.to_dict() for client in pagination.items]
+
+    next_url = None
+    if pagination.has_next:
+        next_url = f'/api/clients/?page={page + 1}&page_size={page_size}'
+
+    previous_url = None
+    if pagination.has_prev:
+        previous_url = f'/api/clients/?page={page - 1}&page_size={page_size}'
 
     return jsonify({
-        'results': [client.to_dict() for client in clients],
-        'count': total,
-        # 'page': page,
-        # 'per_page': page_size
+        'count': pagination.total,
+        'next': next_url,
+        'previous': previous_url,
+        'results': clients
     })
+
+
+# @app.route('/clientsaa/')
+# def get_clients():
+#     print(request.args)
+#     page = request.args.get('page', 1, type=int)
+#     page_size = request.args.get('page_size', 25, type=int)
+#     query = Client.query
+
+#     # Example of simple sorting (extend it as per your frontend requirements)
+#     sort = request.args.get('sort', 'id')
+#     direction = request.args.get('direction', 'asc')
+#     if direction == 'desc':
+#         query = query.order_by(db.desc(getattr(Client, sort)))
+#     else:
+#         query = query.order_by(getattr(Client, sort))
+
+#     # Pagination
+#     pagination = query.paginate(page=page, per_page=page_size, error_out=False)
+#     clients = pagination.items
+#     total = pagination.total
+
+#     return jsonify({
+#         'count': total,
+#         'results': [client.to_dict() for client in clients],
+#     })
 
 @app.route('/api/clients/', methods=['POST'])
 def add_client():

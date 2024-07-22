@@ -163,15 +163,11 @@
 </template>
 
 <script>
-// import { VDataTable } from 'vuetify/lib/components/VDataTable';
 import {formatNumber, roundToTwo, showAlertModal} from "@/utils/utils";
 import apiClient from "@/utils/apiClient";
 
 export default {
     name: "OffersCard",
-    // components: {
-    //     VDataTable,
-    // },
     emits: ['offers-fetched', 'location-offers-fetched'],
     props: {
         searchBy: Object,

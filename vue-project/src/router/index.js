@@ -26,6 +26,14 @@ const router = createRouter({
             },
         ]
     },
+    {
+        path: '/clients',
+        name: 'ClientsList',
+        component: ClientsList,
+        // meta: {
+        //     requiresAuth: true // This route does not require authentication
+        // }
+    },
 
     // {
     //   path: '/',
