@@ -3,26 +3,24 @@
     <v-spacer></v-spacer>
     <v-toolbar color="deep-purple accent-3" dark fixed app>
       <div style="display: flex; align-items: center;">
-        <div style="display: flex; align-items: center;">
-          <v-col sm="12" md="6" lg="auto">
-            <v-text-field
-              v-model="search"
-              style="width: auto; min-width: 460px; max-width: 200px"
-              hide-details
-              variant="outlined"
-              density="compact"
-              class="no-arrows"
-              persistent-placeholder
-            >
-              <template v-slot:label>
-                <span class="custom-label">
-                  Search
-                  <v-icon class="label-icon">mdi-magnify</v-icon>
-                </span>
-              </template>
-            </v-text-field>
-          </v-col>
-        </div>
+        <v-col sm="12" md="6" lg="auto">
+          <v-text-field
+            v-model="search"
+            style="width: auto; min-width: 460px; max-width: 200px"
+            hide-details
+            variant="outlined"
+            density="compact"
+            class="no-arrows"
+            persistent-placeholder
+          >
+            <template v-slot:label>
+              <span class="custom-label">
+                Search
+                <v-icon class="label-icon">mdi-magnify</v-icon>
+              </span>
+            </template>
+          </v-text-field>
+        </v-col>
         <v-col sm="12" md="6" lg="auto">
           <v-text-field
             label="Discount %"
@@ -58,7 +56,7 @@
         <v-btn color="primary" @click="downloadPDF">Download PDF</v-btn>
       </div>
       <div style="display: flex; align-items: center;">
-        <v-btn color="secondary" @click="sendPDF">Send Offer</v-btn>
+        <v-btn color="secondary" @click="sendOffer">Send Offer</v-btn>
       </div>
     </v-toolbar>
     
@@ -114,7 +112,7 @@
   </div>
 </template>
 
-  <script>
+<script>
 import axios from 'axios';
 
 export default {
@@ -191,58 +189,59 @@ export default {
           item.pretRedus = "0.00";
         }
       });
-      this.$forceUpdate(); // Force Vue to re-render and recalculate total price
     },
     validateNumberTextField(value) {
       return !isNaN(value) && value >= 0 && value <= 100;
     },
-    downloadPDF() {
-      const url = `${this.$apiUrl}/generate-offer?action=download`;
-      axios({
-        url: url,
-        method: 'POST',
-        responseType: 'blob',
-        data: {
-          clientId: this.clientId,
-          overallDiscount: this.overallDiscount,
-          products: this.products.filter(p => p.quantity > 0)
-        }
-      }).then(response => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'ClientOffer.pdf');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }).catch(error => {
-        console.error('Error downloading PDF:', error);
-        alert('There was an error downloading the PDF. Please try again.');
-      });
-    },
-    sendPDF() {
-      const url = `${this.$apiUrl}/send_offer`;
+    sendOffer() {
+      const url = `${this.$apiUrl}/generate-offer?action=email`;
+
+      // Ensure overallDiscount is a valid number
+      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
+
       axios.post(url, {
-        clientId: this.clientId,
-        clientEmail: this.clientEmail,  // Ensure client email is sent
-        overallDiscount: this.overallDiscount,
-        products: this.products.filter(p => p.quantity > 0)
+          clientId: this.clientId,
+          clientEmail: this.clientEmail,
+          overallDiscount: overallDiscountValue,
+          products: this.products.filter(p => p.quantity > 0)
       }).then(() => {
-        alert('Offer sent successfully!');
+          alert('Offer sent successfully!');
       })
       .catch(error => {
-          console.error('Error sending PDF:', error);
-          alert('There was an error sending the PDF. Please try again.');
+          console.error('Error sending offer:', error);
+          alert('There was an error sending the offer. Please try again.');
       });
+      },
+    downloadPDF() {
+      const url = `${this.$apiUrl}/generate-offer?action=download`;
+
+      // Ensure overallDiscount is a valid number
+      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
+
+      axios.post(url, {
+          clientId: this.clientId,
+          overallDiscount: overallDiscountValue,
+          products: this.products.filter(p => p.quantity > 0),
+          responseType: 'blob'  // To handle binary response
+      }).then(response => {
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = 'offer.pdf';
+          link.click();
+      })
+      .catch(error => {
+          console.error('Error downloading PDF:', error);
+          alert('There was an error downloading the PDF. Please try again.');
+      });  
     }
   }
 };
-  </script>
- 
-  <style>
-  .v-text-field--outlined {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 4px;
-  }
-  </style>
-  
+</script>
+
+<style>
+.v-text-field--outlined {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+</style>

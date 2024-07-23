@@ -25,9 +25,24 @@
         class="elevation-1"
       >
         <template v-slot:item.actions="{ item }">
-          <v-icon small @click="enableEditing(item)">mdi-pencil</v-icon>
-          <v-icon small @click="deleteClient(item.id)">mdi-delete</v-icon>
+          <v-menu offset-y>
+            <template v-slot:activator="{ props }">
+              <v-icon small v-bind="props">mdi-dots-vertical</v-icon>
+            </template>
+            <v-list>
+              <v-list-item @click="createNewProject(item)">
+                <v-list-item-title>New Project</v-list-item-title>
+            </v-list-item>
+              <v-list-item @click="enableEditing(item)">
+                <v-list-item-title>Edit</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="deleteClient(item.id)">
+                <v-list-item-title>Delete</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </template>
+
         <template v-slot:item.name="{ item }">
           <v-text-field
             v-if="editItem === item.id"
@@ -183,12 +198,19 @@ export default {
       this.dialog = true;
       this.formTitle = 'Add New Client';
     },
+    createNewProject(client) {
+      const { id, email, name } = client;
+      this.$router.push({ 
+        name: 'ProductCategorySelection',
+        params: { clientId: id, clientEmail: email}
+      });
+    },
     close() {
       this.dialog = false;
     },
   },
   mounted() {
-    this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: ['name'], sortDesc: [false] });
+    this.loadItems(); // Ensure correct initial load parameters
   }
 };
 </script>

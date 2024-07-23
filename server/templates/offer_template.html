@@ -77,19 +77,19 @@
             <tr>
                 <td>{{ product.name }}</td>
                 <td>{{ product.quantity }}</td>
-                <td>{{ '%0.2f' | format(product.price|float) }}</td>
-                <td>{{ '%0.2f' | format(product.total_price|float) }}</td>
-                <td>{% if product.discount > 0 %}{{ '%0.2f' | format(product.discount|float) }}%{% endif %}</td>
-                <td>{{ '%0.2f' | format(product.final_price|float) }}</td>
-            </tr> 
+                <td>{{ '{:0.2f}'.format(product.price|float) }}</td>
+                <td>{{ '{:0.2f}'.format(product.pretTotal|float) }}</td>
+                <td>{% if product.discount is not none and product.discount|float > 0 %}{{ '{:0.2f}'.format(product.discount|float) }}%{% endif %}</td>
+                <td>{{ '{:0.2f}'.format(product.pretRedus|float) }}</td>
+            </tr>
             {% endfor %}
             <tr class="total-row">
                 <td colspan="5">Preț Total:</td>
-                <td>{{ total_price }}</td>
+                <td>{{ '{:0.2f}'.format(total_price|float) }}</td>
             </tr>
             <tr class="total-row">
                 <td colspan="5">Preț Redus:</td>
-                <td class="highlight">{{ final_price }}</td>
+                <td class="highlight">{{ '{:0.2f}'.format(final_price_after_overall_discount|float) }}</td>
             </tr>
         </table>
         <div class="footer">
