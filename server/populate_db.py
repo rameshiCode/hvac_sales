@@ -17,39 +17,43 @@ def generate_email(name):
 def generate_phone():
     return f"+1{random.randint(1000000000, 9999999999)}"
 
-def generate_type():
-    types = ["Regular", "VIP", "Enterprise", "Non-Profit", "Government"]
-    return random.choice(types)
+def generate_dates():
+    now = datetime.now()
+    past_date = now - timedelta(days=random.randint(10, 720))
+    return past_date, now
 
-def generate_modified_date():
-    start_date = datetime.now() - timedelta(days=365)
-    end_date = datetime.now()
-    return start_date + (end_date - start_date) * random.random()
-
-def generate_clients(n):
+def generate_client(n):
     clients = []
     for _ in range(n):
-        name = generate_name()
-        client_type = generate_type()
-        agent_id = random.randint(1, 5)  # Assuming agent IDs range from 1 to 5
-        email = generate_email(name)
+        full_name = generate_name()
+        created, modified = generate_dates()
+        agent_id = random.randint(1, 100)  # Assuming agent IDs range from 1 to 10
+        agent_name = "Agent " + generate_name()
+        agent_email = generate_email(agent_name.split()[1])
+        email = generate_email(full_name)
         phone = generate_phone()
-        modified = generate_modified_date()
 
         client = Client(
-            name=name,
-            agent_id=agent_id,
+            created=created,
+            modified=modified,
+            agent_name=agent_name,
+            agent_email=agent_email,
+            full_name=full_name,
             email=email,
             phone=phone,
-            type=client_type,
-            modified=modified
+            agent_id=agent_id,
+            notes="Random notes here",
+            cif="Random CIF",
+            intermediate_id=None,
+            type=random.randint(1, 5),
+            created_by=agent_id
         )
         clients.append(client)
     return clients
 
 def add_clients_to_db():
     with app.app_context():
-        db.session.add_all(generate_clients(100))  # Generate and add 100 clients
+        db.session.add_all(generate_client(100))  # Generate and add 100 clients
         db.session.commit()
 
 if __name__ == '__main__':
