@@ -182,3 +182,5 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw*
+
+server/client_secret_410792550420-qet9eepo4ih2quir69palk19kc3mutgh.apps.googleusercontent.com.json

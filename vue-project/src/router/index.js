@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import PingView from '../views/PingView.vue';
 import ClientsList from "@/views/ClientsList.vue";
 import MainLayout from "@/views/MainLayout.vue";
+import ClientDetails from "@/views/ClientDetails.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +25,18 @@ const router = createRouter({
                     ],
                 },
             },
+            {
+              path: "/client-details/:id",
+              name: "ClientDetails",
+              component: ClientDetails,
+              props: true,
+              meta: {
+                  breadcrumbs: [
+                      { label: 'Clienți', path: '/home' },
+                      { label: 'Detalii client', path: '/client-details' },
+                  ],
+              },
+          },
         ]
     },
     {
@@ -34,6 +47,7 @@ const router = createRouter({
         //     requiresAuth: true // This route does not require authentication
         // }
     },
+ 
 
     // {
     //   path: '/',

@@ -72,7 +72,7 @@
                 </span>
             </template>
             <template v-slot:[`item.full_name`]="{ item }">
-                <a href="#" class="text-decoration-none" @click.prevent="goToClientDetails(item.raw.id)">{{
+                <a href="#" class="text-decoration-none" @click.prevent="goToClientDetails(item.id)">{{
                         item.full_name
                     }} </a>
             </template>
