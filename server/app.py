@@ -30,7 +30,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'i
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app)
 
 with app.app_context():
     db.create_all()
@@ -372,29 +373,49 @@ def generate_offer():
         print(f"General error: {e}")
         return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
 
-# Fetch all offers for a specific client
+# Fetch all offers for a specific client  ClientDetails.vue
 @app.route('/clients/<int:client_id>/offers', methods=['GET'])
 def get_client_offers(client_id):
     offers = Offer.query.filter_by(client_id=client_id).all()
     return jsonify([{
         'id': offer.id,
-        'details': json.loads(offer.details),
+        'products_details': offer.products_details,
         'total_price': offer.total_price,
         'final_price': offer.final_price,
-        'date_created': offer.date_created
-    } for offer in offers])
+        'created_at': offer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # formatting datetime
+    } for offer in offers]), 200
+
+# fetch offers for a specific client ClientDetails.vue state of offer
+@app.route('/offers/<int:offer_id>', methods=['GET'])
+def get_offer(offer_id):
+    offer = Offer.query.get(offer_id)
+    if not offer:
+        return jsonify({'error': 'Offer not found'}), 404
+    return jsonify({
+        'id': offer.id,
+        'client_id': offer.client_id,
+        'products_details': json.loads(offer.products_details),
+        'total_price': offer.total_price,
+        'final_price': offer.final_price,
+        'created_at': offer.created_at.isoformat()
+    }), 200
+
+
 
 # Fetch individual client details
 @app.route('/clients/<int:client_id>', methods=['GET'])
 def get_client(client_id):
-    client = Client.query.get_or_404(client_id)
-    return jsonify({
-        'id': client.id,
-        'name': client.name,
-        'email': client.email,
-        'phone': client.phone,
-        'address': client.address
-    })
+    client = Client.query.get(client_id)
+    if client:
+        return jsonify({
+            'id': client.id,
+            'name': client.name,
+            'email': client.email,
+            'phone': client.phone,
+            'address': client.address
+        }), 200
+    else:
+        return jsonify({'error': 'Client not found'}), 404
 
 # Add route to download offer PDF
 @app.route('/offers/<int:offer_id>/download', methods=['GET'])
@@ -417,6 +438,21 @@ def download_offer(offer_id):
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'attachment; filename=offer_{offer_id}.pdf'
     return response
+#handles saving an offer finish button
+@app.route('/offers', methods=['POST'])
+def create_offer():
+    data = request.json
+    new_offer = Offer(
+        client_id=data['clientId'],
+        products_details=json.dumps(data['products']),
+        total_price=data['totalPrice'],
+        final_price=data['finalPrice']
+    )
+    db.session.add(new_offer)
+    db.session.commit()
+    return jsonify({'message': 'Offer saved successfully', 'offerId': new_offer.id}), 201
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

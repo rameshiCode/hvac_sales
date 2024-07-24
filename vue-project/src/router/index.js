@@ -84,6 +84,12 @@ const router = createRouter({
       component: ClientDetails, // Add route for ClientDetails.vue
       props: true
     },
+    {
+      path: '/product-selection/:clientId/:offerId?',
+      name: 'ProductSelection',
+      component: ProductSelection,
+      props: true
+    },
   ]
 })
 
