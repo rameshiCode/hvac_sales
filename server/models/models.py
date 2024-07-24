@@ -35,7 +35,10 @@ class Client(db.Model):
 class Offer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    details = db.Column(db.Text, nullable=False)
+    details = db.Column(db.Text, nullable=False)  # Store the offer details as JSON or a serialized string
+    total_price = db.Column(db.Float, nullable=False)
+    final_price = db.Column(db.Float, nullable=False)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     client = db.relationship('Client', back_populates='offers')
 
     def __repr__(self):

@@ -32,7 +32,7 @@
             <v-list>
               <v-list-item @click="createNewProject(item)">
                 <v-list-item-title>New Project</v-list-item-title>
-            </v-list-item>
+              </v-list-item>
               <v-list-item @click="enableEditing(item)">
                 <v-list-item-title>Edit</v-list-item-title>
               </v-list-item>
@@ -42,16 +42,10 @@
             </v-list>
           </v-menu>
         </template>
-
         <template v-slot:item.name="{ item }">
-          <v-text-field
-            v-if="editItem === item.id"
-            v-model="editable.name"
-            dense
-            flat
-            hide-details
-          ></v-text-field>
-          <span v-else @dblclick="enableEditing(item)">{{ item.name }}</span>
+          <v-list-item @click="viewClientDetails(item.id)" class="clickable">
+            <v-list-item-title>{{ item.name }}</v-list-item-title>
+          </v-list-item>
         </template>
       </v-data-table>
       <v-dialog v-model="dialog" persistent max-width="600px">
@@ -124,8 +118,11 @@ export default {
       ],
     }
   },
+  created() {
+    this.loadItems();
+  },
   methods: {
-    loadItems() {
+    async fetchClients() {
       this.loading = true;
       const sortOrder = this.sortOrder ? 'asc' : 'desc';
       const params = {
@@ -135,33 +132,36 @@ export default {
         sortOrder: sortOrder,
         search: this.search,
       };
-      axios.get(`${this.$apiUrl}/clients`, { params })
-        .then(response => {
-          this.clients = response.data.items;
-          this.totalItems = response.data.total;
-        })
-        .catch(error => {
-          console.error('Error fetching clients:', error);
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+      try {
+        const response = await axios.get(`${this.$apiUrl}/clients`, { params });
+        this.clients = response.data.items;
+        this.totalItems = response.data.total;
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      } finally {
+        this.loading = false;
+      }
     },
-    saveClient(clientData) {
-      axios.post(`${this.$apiUrl}/clients`, clientData)
-        .then(response => {
-          console.log('Client created:', response.data); // Log the response
-          if (response.status === 201) {
-            const clientId = response.data.id;
-            const clientEmail = response.data.email;
-            this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
-          } else {
-            console.error('Unexpected response:', response);
-          }
-        })
-        .catch(error => {
-          console.error('Error adding client:', error);
-        });
+    viewClientDetails(clientId) {
+      this.$router.push({ name: 'ClientDetails', params: { clientId } });
+    },
+    loadItems() {
+      this.fetchClients();
+    },
+    async saveClient(clientData) {
+      try {
+        const response = await axios.post(`${this.$apiUrl}/clients`, clientData);
+        console.log('Client created:', response.data); // Log the response
+        if (response.status === 201) {
+          const clientId = response.data.id;
+          const clientEmail = response.data.email;
+          this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
+        } else {
+          console.error('Unexpected response:', response);
+        }
+      } catch (error) {
+        console.error('Error adding client:', error);
+      }
     },
     save() {
       if (this.editItem) {
@@ -199,18 +199,21 @@ export default {
       this.formTitle = 'Add New Client';
     },
     createNewProject(client) {
-      const { id, email, name } = client;
+      const { id, email } = client;
       this.$router.push({ 
         name: 'ProductCategorySelection',
-        params: { clientId: id, clientEmail: email}
+        params: { clientId: id, clientEmail: email }
       });
     },
     close() {
       this.dialog = false;
     },
-  },
-  mounted() {
-    this.loadItems(); // Ensure correct initial load parameters
   }
 };
 </script>
+
+<style>
+.clickable {
+  cursor: pointer;
+}
+</style>

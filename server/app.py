@@ -16,6 +16,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from models.models import Client, Product, db, Offer
 from sqlalchemy import func
+import json
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -371,6 +372,51 @@ def generate_offer():
         print(f"General error: {e}")
         return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
 
+# Fetch all offers for a specific client
+@app.route('/clients/<int:client_id>/offers', methods=['GET'])
+def get_client_offers(client_id):
+    offers = Offer.query.filter_by(client_id=client_id).all()
+    return jsonify([{
+        'id': offer.id,
+        'details': json.loads(offer.details),
+        'total_price': offer.total_price,
+        'final_price': offer.final_price,
+        'date_created': offer.date_created
+    } for offer in offers])
+
+# Fetch individual client details
+@app.route('/clients/<int:client_id>', methods=['GET'])
+def get_client(client_id):
+    client = Client.query.get_or_404(client_id)
+    return jsonify({
+        'id': client.id,
+        'name': client.name,
+        'email': client.email,
+        'phone': client.phone,
+        'address': client.address
+    })
+
+# Add route to download offer PDF
+@app.route('/offers/<int:offer_id>/download', methods=['GET'])
+def download_offer(offer_id):
+    offer = Offer.query.get_or_404(offer_id)
+    details = json.loads(offer.details)
+    
+    rendered = render_template(
+        'offer_template.html', 
+        client=Client.query.get_or_404(details['client']),
+        products=details['products'],
+        total_price=details['total_price'],
+        final_price_after_overall_discount=details['final_price_after_overall_discount'],
+        overall_discount=details['overall_discount']
+    )
+    
+    pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config)
+    
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=offer_{offer_id}.pdf'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

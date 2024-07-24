@@ -9,6 +9,7 @@ import ProductManipulation from '../components/ProductManipulation.vue';
 import ClientsManagement from '../components/ClientManagement.vue';
 import ProductCategorySelection from '@/components/ProductCategorySelection.vue';
 import ProductSelection from '@/components/ProductSelection.vue';
+import ClientDetails from '@/components/ClientDetails.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -75,6 +76,12 @@ const router = createRouter({
       path: '/product-selection/:categoryName/:clientId/:clientEmail',
       name: 'ProductSelection',
       component: ProductSelection,
+      props: true
+    },
+    {
+      path: '/clients/:clientId',
+      name: 'ClientDetails',
+      component: ClientDetails, // Add route for ClientDetails.vue
       props: true
     },
   ]

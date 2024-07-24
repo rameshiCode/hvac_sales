@@ -1,114 +1,104 @@
 <template>
-  <div>
-    <v-spacer></v-spacer>
-    <v-toolbar color="deep-purple accent-3" dark fixed app>
-      <div style="display: flex; align-items: center;">
-        <v-col sm="12" md="6" lg="auto">
+  <v-card>
+    <v-container>
+      <v-row>
+        <v-col>
+          <v-btn color="primary" @click="enableAdding">Add New Client</v-btn>
           <v-text-field
             v-model="search"
-            style="width: auto; min-width: 460px; max-width: 200px"
+            append-icon="mdi-magnify"
+            label="Search Clients"
+            single-line
             hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            persistent-placeholder
-          >
-            <template v-slot:label>
-              <span class="custom-label">
-                Search
-                <v-icon class="label-icon">mdi-magnify</v-icon>
-              </span>
+            @input="loadItems"
+          ></v-text-field>
+        </v-col>
+      </v-row>
+      <v-data-table
+        v-model:items-per-page="itemsPerPage"
+        :headers="headers"
+        :items="clients"
+
+        :loading="loading"
+        :search="search"
+        @update:options="loadItems"
+        class="elevation-1"
+      >
+        <template v-slot:item.actions="{ item }">
+          <v-menu offset-y>
+            <template v-slot:activator="{ props }">
+              <v-icon small v-bind="props">mdi-dots-vertical</v-icon>
             </template>
-          </v-text-field>
-        </v-col>
-        <v-col sm="12" md="6" lg="auto">
+            <v-list>
+              <v-list-item @click="createNewProject(item)">
+                <v-list-item-title>New Project</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="enableEditing(item)">
+                <v-list-item-title>Edit</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="deleteClient(item.id)">
+                <v-list-item-title>Delete</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
+
+        <template v-slot:item.name="{ item }">
           <v-text-field
-            label="Discount %"
-            style="width: auto; min-width: 160px; max-width: 200px"
-            v-model="overallDiscount"
+            v-if="editItem === item.id"
+            v-model="editable.name"
+            dense
+            flat
             hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            placeholder="0"
-            persistent-placeholder
-            @blur="updateTotalPrice"
-            @keyup.enter="updateTotalPrice"
           ></v-text-field>
-        </v-col>
-      </div>
-      <v-toolbar-title>
-        <v-col sm="12" md="6" lg="auto">
-          <v-text-field
-            label="Total Price"
-            style="width: auto; min-width: 100px; max-width: 200px"
-            :value="finalDiscountedPrice + ' lei'"
-            readonly
-            hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            persistent-placeholder
-          ></v-text-field>
-        </v-col>
-      </v-toolbar-title>
-      <div style="display: flex; align-items: center;">
-        <v-btn color="primary" @click="downloadPDF">Download PDF</v-btn>
-      </div>
-      <div style="display: flex; align-items: center;">
-        <v-btn color="secondary" @click="sendOffer">Send Offer</v-btn>
-      </div>
-    </v-toolbar>
-    
-    <v-data-table
-      :headers="headers"
-      :items="filteredProducts"
-      item-key="id"
-      class="elevation-1"
-      :items-per-page="5"
-    >
-      <template v-slot:item.price="{ item }">
-        ${{ item.price }}
-      </template>
-      <template v-slot:item.quantity="{ item }">
-        <v-text-field
-          v-model.number="item.quantity"
-          type="number"
-          min="0"
-          @input="updateTotalPrice"
-          dense
-          persistent-placeholder
-        ></v-text-field>
-      </template>
-      <template v-slot:item.discount="{ item }">
-        <v-col sm="12" md="6" lg="auto">
-          <v-text-field
-            label="Discount %"
-            style="width: auto; min-width: 100px; max-width: 200px"
-            v-model="item.discount"
-            hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            persistent-placeholder
-            @blur="updateTotalPrice"
-            @keyup.enter="updateTotalPrice"
-            :rules="[(v) => (validateNumberTextField(v) ? true : 'Not a valid value')]"
-          ></v-text-field>
-        </v-col>
-      </template>
-      <template v-slot:item.pretTotal="{ item }">
-        <span>{{ item.pretTotal }}</span>
-      </template>
-      <template v-slot:item.pretRedus="{ item }">
-        <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
-      </template>
-      <template v-slot:no-data>
-        <v-alert color="error" icon="mdi-alert">
-          No products found.
-        </v-alert>
-      </template>
-    </v-data-table>
+          <span v-else @dblclick="enableEditing(item)">{{ item.name }}</span>
+        </template>
+      </v-data-table>
+      <v-dialog v-model="dialog" persistent max-width="600px">
+        <v-card>
+          <v-card-title>
+            <span class="headline">{{ formTitle }}</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field
+                    label="Name"
+                    v-model="editable.name"
+                    :rules="[v => !!v || 'Name is required']"
+                  ></v-text-field>
+                  <v-text-field
+                    label="Phone"
+                    v-model="editable.phone"
+                    :rules="[v => !!v || 'Phone is required']"
+                  ></v-text-field>
+                  <v-text-field
+                    label="Email"
+                    v-model="editable.email"
+                    :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
+                  ></v-text-field>
+                  <v-text-field
+                    label="Address"
+                    v-model="editable.address"
+                    :rules="[v => !!v || 'Address is required']"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
+            <v-btn color="blue darken-1" text @click="save">Save</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-container>
+  </v-card>
+  <div v-for="client in clients" :key="client.id">
+    <p>{{ client.name }}</p>
+    <button @click="viewClientDetails(client.id)">View Details</button>
   </div>
 </template>
 
@@ -116,132 +106,118 @@
 import axios from 'axios';
 
 export default {
-  props: ['clientId', 'categoryName', 'clientEmail'],
   data() {
     return {
-      products: [],
+      clients: [],
+      loading: true,
+      dialog: false,
+      editable: {},
+      editItem: null,
       search: '',
-      overallDiscount: '',
+      itemsPerPage: 5,
+      sortOrder: true,
+      sortBy: ['name'],
+      totalItems: 0,
+      page: 1,
       headers: [
-        { title: 'Product Name', value: 'name', align: 'start', sortable: true },
-        { title: 'Quantity', value: 'quantity', align: 'center', sortable: false },
-        { title: 'Price', value: 'price', align: 'end', sortable: true },
-        { title: 'Discount', value: 'discount', align: 'center', sortable: false },
-        { title: 'Preț Total', value: 'pretTotal', align: 'end', sortable: false },
-        { title: 'Preț Redus', value: 'pretRedus', align: 'end', sortable: false }
+        { title: 'Client Name', value: 'name', sortable: true },
+        { title: 'Phone', value: 'phone' },
+        { title: 'Email', value: 'email' },
+        { title: 'Address', value: 'address' },
+        { title: 'Actions', value: 'actions', sortable: false }
       ],
-    };
-  },
-  created() {
-    console.log('ProductSelection - Client ID:', this.clientId);
-    console.log('ProductSelection - Category:', this.categoryName);
-    console.log('Received Client Email:', this.clientEmail);
-    if (!this.clientId || !this.clientEmail) {
-      alert("No client selected or email is missing!");
     }
-  },
-  computed: {
-    filteredProducts() {
-      return this.products.filter(p => p.name.toLowerCase().includes(this.search.toLowerCase()));
-    },
-    totalDiscountedPrice() {
-      let total = 0;
-      this.products.forEach(item => {
-        if (item.quantity === 0) {
-          return;
-        }
-        const itemDiscount = item.discount ? item.discount : 0;
-        const priceAfterItemDiscount = item.price - (item.price * itemDiscount) / 100;
-        total += priceAfterItemDiscount * item.quantity;
-      });
-      return total.toFixed(2);
-    },
-    finalDiscountedPrice() {
-      const totalDiscountedPrice = parseFloat(this.totalDiscountedPrice);
-      const overallDiscountValue = (totalDiscountedPrice * this.overallDiscount) / 100;
-      return (totalDiscountedPrice - overallDiscountValue).toFixed(2);
-    },
-  },
-  mounted() {
-    axios
-      .get(`${this.$apiUrl}/products`)
-      .then(response => {
-        this.products = response.data.items.map(item => ({
-          ...item,
-          price: parseFloat(item.price),
-          quantity: 0,
-          discount: "",
-          pretTotal: 0,
-          pretRedus: 0,
-        }));
-      })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-      });
   },
   methods: {
-    updateTotalPrice() {
-      this.products.forEach(item => {
-        item.pretTotal = (item.price * item.quantity).toFixed(2);
-        if (item.discount) {
-          item.pretRedus = (item.pretTotal - (item.pretTotal * item.discount / 100)).toFixed(2);
+    async fetchClients() {
+      this.loading = true;
+      const sortOrder = this.sortOrder ? 'asc' : 'desc';
+      const params = {
+        page: this.page,
+        itemsPerPage: this.itemsPerPage,
+        sortBy: this.sortBy[0],
+        sortOrder: sortOrder,
+        search: this.search,
+      };
+      try {
+        const response = await axios.get(`${this.$apiUrl}/clients`, { params });
+        this.clients = response.data.items;
+        this.totalItems = response.data.total;
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    viewClientDetails(clientId) {
+      this.$router.push({ name: 'ClientDetails', params: { clientId } });
+    },
+    loadItems() {
+      this.fetchClients();
+    },
+    async saveClient(clientData) {
+      try {
+        const response = await axios.post(`${this.$apiUrl}/clients`, clientData);
+        console.log('Client created:', response.data); // Log the response
+        if (response.status === 201) {
+          const clientId = response.data.id;
+          const clientEmail = response.data.email;
+          this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
         } else {
-          item.pretRedus = "0.00";
+          console.error('Unexpected response:', response);
         }
-      });
+      } catch (error) {
+        console.error('Error adding client:', error);
+      }
     },
-    validateNumberTextField(value) {
-      return !isNaN(value) && value >= 0 && value <= 100;
-    },
-    sendOffer() {
-      const url = `${this.$apiUrl}/generate-offer?action=email`;
-
-      // Ensure overallDiscount is a valid number
-      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
-
-      axios.post(url, {
-          clientId: this.clientId,
-          clientEmail: this.clientEmail,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0)
-      }).then(() => {
-          alert('Offer sent successfully!');
-      })
-      .catch(error => {
-          console.error('Error sending offer:', error);
-          alert('There was an error sending the offer. Please try again.');
-      });
+    save() {
+      if (this.editItem) {
+        axios.put(`${this.$apiUrl}/clients/${this.editItem}`, this.editable)
+        .then(() => {
+            this.loadItems();
+            this.close();
+          })
+          .catch(error => {
+            console.error('Error saving client:', error);
+          });
+        } else {
+          this.saveClient(this.editable);
+        }
       },
-    downloadPDF() {
-      const url = `${this.$apiUrl}/generate-offer?action=download`;
-
-      // Ensure overallDiscount is a valid number
-      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
-
-      axios.post(url, {
-          clientId: this.clientId,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0),
-          responseType: 'blob'  // To handle binary response
-      }).then(response => {
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = 'offer.pdf';
-          link.click();
-      })
-      .catch(error => {
-          console.error('Error downloading PDF:', error);
-          alert('There was an error downloading the PDF. Please try again.');
-      });  
+      deleteClient(clientId) {
+        axios.delete(`${this.$apiUrl}/clients/${clientId}`)
+        .then(() => {
+          this.loadItems();
+        })
+        .catch(error => {
+          console.error('Error deleting client:', error);
+        });
+      },
+      enableEditing(client) {
+        this.editable = { ...client };
+        this.editItem = client.id;
+        this.dialog = true;
+        this.formTitle = 'Edit Client';
+      },
+      enableAdding() {
+        this.editable = { name: '', phone: '', email: '', address: '' };
+        this.editItem = null;
+        this.dialog = true;
+        this.formTitle = 'Add New Client';
+      },
+      createNewProject(client) {
+        const { id, email } = client;
+        this.$router.push({ 
+          name: 'ProductCategorySelection',
+          params: { clientId: id, clientEmail: email }
+        });
+      },
+      close() {
+        this.dialog = false;
+      },
+      created() {
+        this.loadItems();
+      },
     }
-  }
-};
+  };
 </script>
-
-<style>
-.v-text-field--outlined {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-}
-</style>
