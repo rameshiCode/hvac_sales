@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import os
 import sqlite3
 
@@ -14,9 +15,8 @@ from flask_mail import Mail, Message
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-from models.models import Client, Product, db, Offer
+from models.models import Client, Offer, Product, db
 from sqlalchemy import func
-import json
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -237,6 +237,7 @@ def add_product():
         'name': new_product.name, 
         'price': new_product.price, 
         'category': new_product.category, 
+        'subcategory': new_product.subcategory, 
         'area': new_product.area
     }), 201
 
@@ -249,9 +250,9 @@ def get_products():
         items_per_page = request.args.get('itemsPerPage', 10, type=int)
         search = request.args.get('search', '')
         area_filter = request.args.get('area', type=int)
-        category_filter = request.args.get('category', '')  # New category filter
-        sort_by = request.args.getlist('sortBy[0][key]', type=str)
-        sort_order = request.args.getlist('sortBy[0][order]', type=str)
+        category_filter = request.args.get('category', '')
+        sort_by = request.args.get('sortBy', 'name')
+        sort_order = request.args.get('sortOrder', 'asc')
 
         # Build the initial query
         query = Product.query
@@ -269,20 +270,37 @@ def get_products():
             query = query.filter(Product.category.ilike(f'%{category_filter}%'))
 
         # Handle sorting
-        if sort_by and sort_order:
-            if sort_order[0] == 'asc':
-                query = query.order_by(func.lower(getattr(Product, sort_by[0])).asc())
-            else:
-                query = query.order_by(func.lower(getattr(Product, sort_by[0])).desc())
+        if sort_order == 'asc':
+            query = query.order_by(func.lower(getattr(Product, sort_by)).asc())
+        else:
+            query = query.order_by(func.lower(getattr(Product, sort_by)).desc())
 
         # Pagination
         paginated_result = query.paginate(page=page, per_page=items_per_page, error_out=False)
         products = paginated_result.items
         total = paginated_result.total
 
+        # Debugging prints
+        print(f"Page: {page}, Items per Page: {items_per_page}")
+        print(f"Total Products: {total}")
+        for product in products:
+            if product is None:
+                print("Found None product in the list!")
+            else:
+                print(f"Product: {product}, ID: {product.id}")
+
         # Prepare response
         response = {
-            'items': [{'id': p.id, 'name': p.name, 'price': p.price, 'category': p.category, 'area': p.area} for p in products],
+            'items': [
+                {
+                    'id': p.id, 
+                    'name': p.name, 
+                    'price': p.price, 
+                    'category': p.category, 
+                    'subcategory': p.subcategory, 
+                    'area': p.area
+                } for p in products if p is not None  # Ensure p is not None
+            ],
             'total': total
         }
 
@@ -290,7 +308,6 @@ def get_products():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': 'An error occurred'}), 500
-
 
 @app.route('/products/<int:product_id>', methods=['DELETE'])
 def delete_product(product_id):
@@ -467,31 +484,26 @@ def download_offer(offer_id):
 
 @app.route('/offers', methods=['POST'])
 def create_offer():
-    data = request.json
-    client_id = data.get('clientId')
-    products_details = data.get('products_details')
-    total_price = data.get('totalPrice', 0)  # Default to 0 if not present
-    final_price = data.get('finalPrice', 0)  # Default to 0 if not present
-
-    if not client_id or not products_details:
-        return jsonify({'error': 'Missing required data'}), 400
+    data = request.get_json()  # Get the JSON data from the request
+    
+    # Check for required keys and provide default values if not present
+    total_price = data.get('totalPrice', 0)  # Default to 0 if 'totalPrice' is missing
+    final_price = data.get('finalPrice', 0)  # Default to 0 if 'finalPrice' is missing
 
     try:
         new_offer = Offer(
-            client_id=client_id,
-            products_details=json.dumps(products_details),  # Convert to JSON string
+            client_id=data['clientId'],
+            products_details=json.dumps(data['products']),  # Convert to JSON string
             total_price=total_price,
             final_price=final_price
         )
         db.session.add(new_offer)
         db.session.commit()
-        return jsonify({'message': 'Offer created successfully', 'offerId': new_offer.id}), 201
+        return jsonify({'message': 'Offer created successfully'}), 201
+    except KeyError as e:
+        return jsonify({'error': f'Missing key: {str(e)}'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
