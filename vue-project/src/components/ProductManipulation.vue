@@ -56,6 +56,15 @@
                 ></v-select>
               </v-col>
               <v-col cols="12">
+                <v-select
+                  v-model="newProduct.subcategory"
+                  :items="subcategories"
+                  label="Subcategory"
+                  outlined
+                  dense
+                ></v-select>
+              </v-col>
+              <v-col cols="12">
                 <v-text-field
                   v-model="newProduct.area"
                   label="Area"
@@ -106,6 +115,12 @@
         ></v-text-field>
         <span v-else @dblclick="enableEditing(item)">{{ item.price }}</span>
       </template>
+      <template v-slot:item.category="{ item }">
+        <span>{{ item.category }}</span>
+      </template>
+      <template v-slot:item.subcategory="{ item }">
+        <span>{{ item.subcategory }}</span>
+      </template>
       <template v-slot:item.actions="{ item }">
         <v-icon small class="mr-2" @click="deleteProduct(item.id)">
           mdi-delete
@@ -136,9 +151,11 @@ export default {
       name: '',
       price: '',
       category: '',
+      subcategory: '',  // Added subcategory to newProduct
       area: ''
     },
     categories: ['Pompe de Caldura', 'Instalatii Sanitare', 'Ventilatie'],
+    subcategories: ['Main', 'Complementary'],  // Added subcategories
     editable: {},
     editItem: null,
     dialog: false,
@@ -147,6 +164,7 @@ export default {
       { title: 'Product Name', key: 'name', align: 'start', sortable: true },
       { title: 'Price', key: 'price', align: 'end', sortable: true },
       { title: 'Category', key: 'category', align: 'start', sortable: true },
+      { title: 'Subcategory', key: 'subcategory', align: 'start', sortable: true },  // Added Subcategory header
       { title: 'Area', key: 'area', align: 'start', sortable: true },
       { title: 'Actions', key: 'actions', sortable: false }
     ],
@@ -154,38 +172,51 @@ export default {
     serverItems: [],
     loading: true,
     totalItems: 0,
+    page: 1,
+    sortOrder: true,
+    sortBy: ['name']
   }),
   methods: {
-    loadItems ({ page, itemsPerPage, sortBy }) {
+    loadItems () {
       this.loading = true;
-      axios.get('http://localhost:5001/products', {
-        params: { page, itemsPerPage, sortBy, search: this.search }
-      }).then(response => {
+      const sortOrder = this.sortOrder ? 'asc' : 'desc';
+      const params = {
+        page: this.page,
+        itemsPerPage: this.itemsPerPage,
+        sortBy: this.sortBy[0],
+        sortOrder: sortOrder,
+        search: this.search
+      };
+      console.log(params)
+      axios.get(`${this.$apiUrl}/products`, { params })
+      .then(response => {
         this.serverItems = response.data.items;
         this.totalItems = response.data.total;
-        this.loading = false;
-      }).catch(error => {
-        console.error('Error fetching products:', error);
-        this.loading = false;
-      });
-    },
+          this.loading = false;
+        })
+        .catch(error => {
+          console.error('Error fetching products:', error);
+          this.loading = false;
+        });
+      },
+
     addProduct() {
       if (!this.newProduct.name || !this.newProduct.price) {
         alert("Please fill in all fields.");
         return;
       }
-      axios.post('http://localhost:5001/products', this.newProduct)
+      axios.post(`${this.$apiUrl}/products`, this.newProduct)
         .then(() => {
-          this.newProduct = { name: '', price: '', category: '', area: '' }; // Reset form
+          this.newProduct = { name: '', price: '', category: '', subcategory: '', area: '' }; // Reset form
           this.dialog = false;
-          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+          this.loadItems();
         })
         .catch(error => console.error('Error adding product:', error));
     },
     deleteProduct(productId) {
-      axios.delete(`http://localhost:5001/products/${productId}`)
+      axios.delete(`${this.$apiUrl}/products/${productId}`)
         .then(() => {
-          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+          this.loadItems();
         })
         .catch(error => {
           console.error('Error deleting product:', error);
@@ -196,16 +227,25 @@ export default {
       this.editItem = item.id;
     },
     saveEdit(item) {
-      axios.put(`http://localhost:5001/products/${item.id}`, this.editable)
+      axios.put(`${this.$apiUrl}/products/${item.id}`, this.editable)
         .then(() => {
           this.editItem = null;
-          this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
+          this.loadItems();
         })
         .catch(error => {
           console.error('Error updating product:', error);
           this.editItem = null;
         });
     }
-  }
+  },
+  created() {
+        this.loadItems();
+      },
 }
 </script>
+
+<style scoped>
+.headline {
+  font-weight: bold;
+}
+</style>

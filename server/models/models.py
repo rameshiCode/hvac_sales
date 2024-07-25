@@ -13,18 +13,32 @@ from . import db
 #     def check_password(self, password):
 #         return check_password_hash(self.password_hash, password)
 
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(255), nullable=True)
-    area = db.Column(db.Integer, nullable=True)  # Updated to Integer
+    subcategory = db.Column(db.String(255), nullable=True)
+    area = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
         return f"<Product {self.name}>"
-    
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'category': self.category,
+            'subcategory': self.subcategory,
+            'area': self.area
+        }
+
+
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -35,7 +49,7 @@ class Client(db.Model):
 
     def __repr__(self):
         return f'<Client {self.name}>'
-    
+
 class Offer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
@@ -47,5 +61,5 @@ class Offer(db.Model):
 
     def __repr__(self):
         return f'<Offer for {self.client.name}>'
-    
+
 Client.offers = db.relationship('Offer', order_by=Offer.id, back_populates='client')
