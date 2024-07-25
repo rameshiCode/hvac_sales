@@ -60,9 +60,61 @@
         <v-btn color="secondary" @click="sendOffer">Send Offer</v-btn>
       </div>
     </v-toolbar>
-    <div v-for="(subcategories, category) in groupedProducts" :key="category">
-      <h2>{{ category }}</h2>
-      <div v-for="(products, subcategory) in subcategories" :key="subcategory">
+
+    <div v-if="Object.keys(groupedProducts.main).length > 0">
+      <h2>Main Products</h2>
+      <div v-for="(products, subcategory) in groupedProducts.main" :key="subcategory">
+        <h3>{{ subcategory }}</h3>
+        <v-data-table
+          :headers="headers"
+          :items="products"
+          item-key="id"
+          class="elevation-1"
+          :items-per-page="5"
+        >
+          <template v-slot:item.price="{ item }">
+            ${{ item.price }}
+          </template>
+          <template v-slot:item.quantity="{ item }">
+            <v-text-field
+              v-model.number="item.quantity"
+              type="number"
+              min="0"
+              @input="updateTotalPrice"
+              dense
+              persistent-placeholder
+            ></v-text-field>
+          </template>
+          <template v-slot:item.discount="{ item }">
+            <v-text-field
+              v-model="item.discount"
+              hide-details
+              variant="outlined"
+              density="compact"
+              persistent-placeholder
+              @blur="updateTotalPrice"
+              @keyup.enter="updateTotalPrice"
+              :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
+            ></v-text-field>
+          </template>
+          <template v-slot:item.pretTotal="{ item }">
+            <span>{{ item.pretTotal }}</span>
+          </template>
+          <template v-slot:item.pretRedus="{ item }">
+            <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
+          </template>
+          <template v-slot:no-data>
+            <v-alert color="error" icon="mdi-alert">
+              No products found.
+            </v-alert>
+          </template>
+        </v-data-table>
+      </div>
+    </div>
+
+    <div v-if="Object.keys(groupedProducts.complementary).length > 0">
+      <h2>Complementary Products</h2>
+      <div v-for="(products, subcategory) in groupedProducts.complementary" :key="subcategory">
         <h3>{{ subcategory }}</h3>
         <v-data-table
           :headers="headers"
@@ -147,18 +199,19 @@ export default {
   },
   computed: {
     groupedProducts() {
-      const grouped = {};
+      const grouped = {
+        main: {},
+        complementary: {}
+      };
 
       this.products.forEach(product => {
-        if (!grouped[product.category]) {
-          grouped[product.category] = {};
+        const targetGroup = product.category === 'Main' ? 'main' : 'complementary';
+
+        if (!grouped[targetGroup][product.subcategory]) {
+          grouped[targetGroup][product.subcategory] = [];
         }
 
-        if (!grouped[product.category][product.subcategory]) {
-          grouped[product.category][product.subcategory] = [];
-        }
-
-        grouped[product.category][product.subcategory].push(product);
+        grouped[targetGroup][product.subcategory].push(product);
       });
 
       return grouped;
@@ -253,10 +306,12 @@ export default {
       const url = `${this.$apiUrl}/offers`;
       const offerData = {
         clientId: this.clientId,
-        products_details: this.products.filter(p => p.quantity > 0),
+        products: this.products.filter(p => p.quantity > 0),
         totalPrice: this.totalPrice,
         finalPrice: this.totalPrice
       };
+
+      console.log("Sending offer data:", offerData);
 
       axios.post(url, offerData)
         .then(response => {

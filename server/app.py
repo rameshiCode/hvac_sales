@@ -485,6 +485,9 @@ def download_offer(offer_id):
 @app.route('/offers', methods=['POST'])
 def create_offer():
     data = request.get_json()  # Get the JSON data from the request
+
+    # Print the received data for debugging
+    print("Received offer data:", data)
     
     # Check for required keys and provide default values if not present
     total_price = data.get('totalPrice', 0)  # Default to 0 if 'totalPrice' is missing
@@ -499,11 +502,15 @@ def create_offer():
         )
         db.session.add(new_offer)
         db.session.commit()
+        print("Offer created successfully:", new_offer)
         return jsonify({'message': 'Offer created successfully'}), 201
     except KeyError as e:
+        print(f"Missing key: {str(e)}")
         return jsonify({'error': f'Missing key: {str(e)}'}), 400
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
