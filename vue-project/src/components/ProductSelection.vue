@@ -1,48 +1,46 @@
 <template>
   <div>
-    <v-spacer></v-spacer>
     <v-toolbar color="deep-purple accent-3" dark fixed app>
-      <div style="display: flex; align-items: center;">
-        <v-col sm="12" md="6" lg="auto">
-          <v-text-field
-            v-model="search"
-            style="width: auto; min-width: 460px; max-width: 200px"
-            hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            persistent-placeholder
-          >
-            <template v-slot:label>
-              <span class="custom-label">
-                Search
-                <v-icon class="label-icon">mdi-magnify</v-icon>
-              </span>
-            </template>
-          </v-text-field>
-        </v-col>
-        <v-col sm="12" md="6" lg="auto">
-          <v-text-field
-            label="Discount %"
-            style="width: auto; min-width: 160px; max-width: 200px"
-            v-model="overallDiscount"
-            hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            placeholder="0"
-            persistent-placeholder
-            @blur="updateTotalPrice"
-            @keyup.enter="updateTotalPrice"
-          ></v-text-field>
-        </v-col>
-      </div>
+      <v-spacer></v-spacer>
+      <v-col sm="12" md="6" lg="auto">
+        <v-text-field
+          v-model="search"
+          style="width: auto; min-width: 460px; max-width: 200px"
+          hide-details
+          variant="outlined"
+          density="compact"
+          class="no-arrows"
+          persistent-placeholder
+        >
+          <template v-slot:label>
+            <span class="custom-label">
+              Search
+              <v-icon class="label-icon">mdi-magnify</v-icon>
+            </span>
+          </template>
+        </v-text-field>
+      </v-col>
+      <v-col sm="12" md="6" lg="auto">
+        <v-text-field
+          label="Discount %"
+          style="width: auto; min-width: 160px; max-width: 200px"
+          v-model="overallDiscount"
+          hide-details
+          variant="outlined"
+          density="compact"
+          class="no-arrows"
+          placeholder="0"
+          persistent-placeholder
+          @blur="updateTotalPrice"
+          @keyup.enter="updateTotalPrice"
+        ></v-text-field>
+      </v-col>
       <v-toolbar-title>
         <v-col sm="12" md="6" lg="auto">
           <v-text-field
             label="Total Price"
             style="width: auto; min-width: 100px; max-width: 200px"
-            :value="finalDiscountedPrice + ' lei'"
+            :value="totalPrice + ' lei'"
             readonly
             hide-details
             variant="outlined"
@@ -53,66 +51,65 @@
         </v-col>
       </v-toolbar-title>
       <div style="display: flex; align-items: center;">
+        <v-btn color="green" @click="finishOffer">Finish</v-btn>
+      </div>
+      <div style="display: flex; align-items: center;">
         <v-btn color="primary" @click="downloadPDF">Download PDF</v-btn>
       </div>
       <div style="display: flex; align-items: center;">
         <v-btn color="secondary" @click="sendOffer">Send Offer</v-btn>
       </div>
-      <div style="display: flex; align-items: center;">
-        <v-btn color="green" @click="finishOffer">Finish</v-btn>
-      </div>
-
     </v-toolbar>
-    
-    <v-data-table
-      :headers="headers"
-      :items="filteredProducts"
-      item-key="id"
-      class="elevation-1"
-      :items-per-page="5"
-    >
-      <template v-slot:item.price="{ item }">
-        ${{ item.price }}
-      </template>
-      <template v-slot:item.quantity="{ item }">
-        <v-text-field
-          v-model.number="item.quantity"
-          type="number"
-          min="0"
-          @input="updateTotalPrice"
-          dense
-          persistent-placeholder
-        ></v-text-field>
-      </template>
-      <template v-slot:item.discount="{ item }">
-        <v-col sm="12" md="6" lg="auto">
-          <v-text-field
-            label="Discount %"
-            style="width: auto; min-width: 100px; max-width: 200px"
-            v-model="item.discount"
-            hide-details
-            variant="outlined"
-            density="compact"
-            class="no-arrows"
-            persistent-placeholder
-            @blur="updateTotalPrice"
-            @keyup.enter="updateTotalPrice"
-            :rules="[(v) => (validateNumberTextField(v) ? true : 'Not a valid value')]"
-          ></v-text-field>
-        </v-col>
-      </template>
-      <template v-slot:item.pretTotal="{ item }">
-        <span>{{ item.pretTotal }}</span>
-      </template>
-      <template v-slot:item.pretRedus="{ item }">
-        <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
-      </template>
-      <template v-slot:no-data>
-        <v-alert color="error" icon="mdi-alert">
-          No products found.
-        </v-alert>
-      </template>
-    </v-data-table>
+    <div v-for="(subcategories, category) in groupedProducts" :key="category">
+      <h2>{{ category }}</h2>
+      <div v-for="(products, subcategory) in subcategories" :key="subcategory">
+        <h3>{{ subcategory }}</h3>
+        <v-data-table
+          :headers="headers"
+          :items="products"
+          item-key="id"
+          class="elevation-1"
+          :items-per-page="5"
+        >
+          <template v-slot:item.price="{ item }">
+            ${{ item.price }}
+          </template>
+          <template v-slot:item.quantity="{ item }">
+            <v-text-field
+              v-model.number="item.quantity"
+              type="number"
+              min="0"
+              @input="updateTotalPrice"
+              dense
+              persistent-placeholder
+            ></v-text-field>
+          </template>
+          <template v-slot:item.discount="{ item }">
+            <v-text-field
+              v-model="item.discount"
+              hide-details
+              variant="outlined"
+              density="compact"
+              persistent-placeholder
+              @blur="updateTotalPrice"
+              @keyup.enter="updateTotalPrice"
+              :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
+            ></v-text-field>
+          </template>
+          <template v-slot:item.pretTotal="{ item }">
+            <span>{{ item.pretTotal }}</span>
+          </template>
+          <template v-slot:item.pretRedus="{ item }">
+            <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
+          </template>
+          <template v-slot:no-data>
+            <v-alert color="error" icon="mdi-alert">
+              No products found.
+            </v-alert>
+          </template>
+        </v-data-table>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -120,12 +117,14 @@
 import axios from 'axios';
 
 export default {
-  props: ['clientId', 'categoryName', 'clientEmail', 'offerId'], // Added offerId prop
+  props: ['clientId', 'categoryName', 'clientEmail', 'offerId'],
   data() {
     return {
       products: [],
       search: '',
       overallDiscount: '',
+      totalPrice: 0,
+      finalDiscountedPrice: 0,
       headers: [
         { title: 'Product Name', value: 'name', align: 'start', sortable: true },
         { title: 'Quantity', value: 'quantity', align: 'center', sortable: false },
@@ -137,6 +136,10 @@ export default {
     };
   },
   created() {
+    console.log('Received Client ID:', this.clientId);
+    console.log('Received Client Email:', this.clientEmail);
+    console.log('Received Category Name:', this.categoryName);
+    console.log('Received Offer ID:', this.offerId);
     if (this.offerId) {
       this.loadExistingOffer(this.offerId);
     } else {
@@ -144,66 +147,73 @@ export default {
     }
   },
   computed: {
-    filteredProducts() {
-      return this.products.filter(p => p.name.toLowerCase().includes(this.search.toLowerCase()));
-    },
-    totalDiscountedPrice() {
-      let total = 0;
-      this.products.forEach(item => {
-        if (item.quantity === 0) {
-          return;
+    groupedProducts() {
+      const grouped = {};
+
+      this.products.forEach(product => {
+        if (!grouped[product.category]) {
+          grouped[product.category] = {};
         }
-        const itemDiscount = item.discount ? item.discount : 0;
-        const priceAfterItemDiscount = item.price - (item.price * itemDiscount) / 100;
-        total += priceAfterItemDiscount * item.quantity;
+
+        if (!grouped[product.category][product.subcategory]) {
+          grouped[product.category][product.subcategory] = [];
+        }
+
+        grouped[product.category][product.subcategory].push(product);
       });
-      return total.toFixed(2);
-    },
-    finalDiscountedPrice() {
-      const totalDiscountedPrice = parseFloat(this.totalDiscountedPrice);
-      const overallDiscountValue = (totalDiscountedPrice * this.overallDiscount) / 100;
-      return (totalDiscountedPrice - overallDiscountValue).toFixed(2);
-    },
+
+      return grouped;
+    }
   },
   methods: {
     loadProducts() {
-      axios.get(`${this.$apiUrl}/products`)
-        .then(response => {
-          this.products = response.data.items.map(item => ({
-            ...item,
-            price: parseFloat(item.price),
-            quantity: 0,
-            discount: "",
-            pretTotal: 0,
-            pretRedus: 0,
-          }));
-        })
-        .catch(error => {
-          console.error('Error fetching products:', error);
-        });
+      axios.get(`${this.$apiUrl}/products`, {
+        params: {
+          category: this.categoryName
+        }
+      }).then(response => {
+        this.products = response.data.items.map(item => ({
+          ...item,
+          price: parseFloat(item.price),
+          quantity: 0,
+          discount: "",
+          pretTotal: 0,
+          pretRedus: 0,
+          category: item.category,
+          subcategory: item.subcategory
+        }));
+      }).catch(error => {
+        console.error('Error fetching products:', error);
+      });
     },
     loadExistingOffer(offerId) {
       axios.get(`${this.$apiUrl}/offers/${offerId}`)
         .then(response => {
           const offerDetails = response.data;
-          this.products = offerDetails.products_details; // Assuming the structure matches
-          this.overallDiscount = offerDetails.overallDiscount; // Assuming this field exists
+          this.products = offerDetails.products_details;
+          this.overallDiscount = offerDetails.overallDiscount;
+          this.categoryName = offerDetails.products_details.length > 0 ? offerDetails.products_details[0].category : '';
+          this.clientEmail = offerDetails.clientEmail;
+          this.updateTotalPrice();
         })
         .catch(error => {
           console.error('Error loading existing offer:', error);
         });
     },
     updateTotalPrice() {
+      this.totalPrice = 0;  // Reset totalPrice before recalculating
       this.products.forEach(item => {
         item.pretTotal = (item.price * item.quantity).toFixed(2);
         if (item.discount) {
           item.pretRedus = (item.pretTotal - (item.pretTotal * item.discount / 100)).toFixed(2);
         } else {
-          item.pretRedus = "0.00";
+          item.pretRedus = (item.pretTotal * (1 - this.overallDiscount / 100)).toFixed(2);
         }
+        this.totalPrice += parseFloat(item.pretTotal);
       });
+      this.finalDiscountedPrice = this.products.reduce((acc, item) => acc + parseFloat(item.pretRedus), 0).toFixed(2);
     },
-    validateNumberTextField(value) {
+    validateDiscount(value) {
       return !isNaN(value) && value >= 0 && value <= 100;
     },
     sendOffer() {
@@ -217,8 +227,7 @@ export default {
           products: this.products.filter(p => p.quantity > 0)
       }).then(() => {
           alert('Offer sent successfully!');
-      })
-      .catch(error => {
+      }).catch(error => {
           console.error('Error sending offer:', error);
           alert('There was an error sending the offer. Please try again.');
       });
@@ -232,15 +241,14 @@ export default {
           overallDiscount: overallDiscountValue,
           products: this.products.filter(p => p.quantity > 0)
       }, {
-        responseType: 'blob'  // Important to handle PDF data
+        responseType: 'blob'
       }).then(response => {
           const blob = new Blob([response.data], { type: 'application/pdf' });
           const link = document.createElement('a');
           link.href = window.URL.createObjectURL(blob);
           link.download = 'offer.pdf';
           link.click();
-      })
-      .catch(error => {
+      }).catch(error => {
           console.error('Error downloading PDF:', error);
           alert('There was an error downloading the PDF. Please try again.');
       });
@@ -249,8 +257,8 @@ export default {
       const url = `${this.$apiUrl}/offers`;
       const offerData = {
         clientId: this.clientId,
-        products: this.products.filter(p => p.quantity > 0),
-        totalPrice: this.totalDiscountedPrice,
+        products_details: this.products.filter(p => p.quantity > 0),
+        totalPrice: this.totalPrice,
         finalPrice: this.finalDiscountedPrice
       };
 
@@ -263,11 +271,10 @@ export default {
           console.error('Error saving the offer:', error);
           alert('There was an error saving the offer. Please try again.');
         });
-      }
+    }
   }
 };
 </script>
-
 
 <style>
 .v-text-field--outlined {

@@ -2,42 +2,78 @@
   <v-card>
     <v-container class="pa-3">
       <v-row>
-        <v-col cols="12" sm="5">
+        <v-col cols="12">
+          <v-btn color="primary" @click="dialog = true">Add Product</v-btn>
           <v-text-field
-            v-model="newProduct.name"
-            label="Product Name"
-            required
-            :rules="[v => !!v || 'Name is required']"
-            outlined
-            dense
+            v-model="search"
+            append-icon="mdi-magnify"
+            label="Search Products"
+            single-line
+            hide-details
+            @input="loadItems"
           ></v-text-field>
         </v-col>
-        <v-col cols="12" sm="5">
-          <v-text-field
-            v-model="newProduct.price"
-            label="Price"
-            required
-            :rules="[v => !!v || 'Price is required']"
-            type="number"
-            prefix="$"
-            outlined
-            dense
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" sm="2">
-          <v-btn color="primary" @click="addProduct" block>Add Product</v-btn>
-        </v-col>
-        <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="Search Products"
-              single-line
-              hide-details
-              @input="loadItems"
-            ></v-text-field>
       </v-row>
     </v-container>
-    
+
+    <v-dialog v-model="dialog" max-width="500px">
+      <v-card>
+        <v-card-title>
+          <span class="headline">Add Product</span>
+        </v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newProduct.name"
+                  label="Product Name"
+                  required
+                  :rules="[v => !!v || 'Name is required']"
+                  outlined
+                  dense
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newProduct.price"
+                  label="Price"
+                  required
+                  :rules="[v => !!v || 'Price is required']"
+                  type="number"
+                  prefix="$"
+                  outlined
+                  dense
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-select
+                  v-model="newProduct.category"
+                  :items="categories"
+                  label="Category"
+                  outlined
+                  dense
+                ></v-select>
+              </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newProduct.area"
+                  label="Area"
+                  outlined
+                  dense
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
+          <v-btn color="blue darken-1" text @click="addProduct">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-data-table
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
@@ -91,7 +127,6 @@
   </v-card>
 </template>
 
-
 <script>
 import axios from 'axios';
 
@@ -99,15 +134,20 @@ export default {
   data: () => ({
     newProduct: {
       name: '',
-      price: ''
+      price: '',
+      category: '',
+      area: ''
     },
+    categories: ['Pompe de Caldura', 'Instalatii Sanitare', 'Ventilatie'],
     editable: {},
     editItem: null,
-    // table 
+    dialog: false,
     itemsPerPage: 5,
     headers: [
       { title: 'Product Name', key: 'name', align: 'start', sortable: true },
       { title: 'Price', key: 'price', align: 'end', sortable: true },
+      { title: 'Category', key: 'category', align: 'start', sortable: true },
+      { title: 'Area', key: 'area', align: 'start', sortable: true },
       { title: 'Actions', key: 'actions', sortable: false }
     ],
     search: '',
@@ -118,9 +158,6 @@ export default {
   methods: {
     loadItems ({ page, itemsPerPage, sortBy }) {
       this.loading = true;
-      console.log(page);
-      console.log(itemsPerPage);
-      console.log(sortBy);
       axios.get('http://localhost:5001/products', {
         params: { page, itemsPerPage, sortBy, search: this.search }
       }).then(response => {
@@ -139,7 +176,8 @@ export default {
       }
       axios.post('http://localhost:5001/products', this.newProduct)
         .then(() => {
-          this.newProduct = { name: '', price: '' }; // Reset form
+          this.newProduct = { name: '', price: '', category: '', area: '' }; // Reset form
+          this.dialog = false;
           this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage, sortBy: [], sortDesc: [] });
         })
         .catch(error => console.error('Error adding product:', error));

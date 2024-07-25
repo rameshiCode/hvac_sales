@@ -14,10 +14,13 @@ from . import db
 #         return check_password_hash(self.password_hash, password)
 
 
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(255), nullable=True)
+    area = db.Column(db.Integer, nullable=True)  # Updated to Integer
 
     def __repr__(self):
         return f"<Product {self.name}>"
@@ -28,7 +31,8 @@ class Client(db.Model):
     phone = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     address = db.Column(db.String(200), nullable=False)
-    
+    offers = db.relationship('Offer', back_populates='client')
+
     def __repr__(self):
         return f'<Client {self.name}>'
     

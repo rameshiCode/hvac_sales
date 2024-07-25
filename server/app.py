@@ -219,13 +219,27 @@ def export_products():
         print(e)
         return jsonify({"error": str(e)}), 500
     
+#Add product ProductManipulation.vue    
 @app.route('/products', methods=['POST'])
 def add_product():
     data = request.json
-    new_product = Product(name=data['name'], price=data['price'])
+    print(f"Received data: {data}")
+    new_product = Product(
+        name=data['name'], 
+        price=data['price'], 
+        category=data.get('category', ''), 
+        area=data.get('area', 0)
+    )
     db.session.add(new_product)
     db.session.commit()
-    return jsonify({'id': new_product.id, 'name': new_product.name, 'price': new_product.price}), 201
+    return jsonify({
+        'id': new_product.id, 
+        'name': new_product.name, 
+        'price': new_product.price, 
+        'category': new_product.category, 
+        'area': new_product.area
+    }), 201
+
 
 @app.route('/products', methods=['GET'])
 def get_products():
@@ -234,6 +248,8 @@ def get_products():
         page = request.args.get('page', 1, type=int)
         items_per_page = request.args.get('itemsPerPage', 10, type=int)
         search = request.args.get('search', '')
+        area_filter = request.args.get('area', type=int)
+        category_filter = request.args.get('category', '')  # New category filter
         sort_by = request.args.getlist('sortBy[0][key]', type=str)
         sort_order = request.args.getlist('sortBy[0][order]', type=str)
 
@@ -243,6 +259,14 @@ def get_products():
         # Filter based on search term
         if search:
             query = query.filter(Product.name.ilike(f'%{search}%'))
+
+        # Filter based on area
+        if area_filter:
+            query = query.filter(Product.area == area_filter)
+
+        # Filter based on category
+        if category_filter:
+            query = query.filter(Product.category.ilike(f'%{category_filter}%'))
 
         # Handle sorting
         if sort_by and sort_order:
@@ -258,14 +282,15 @@ def get_products():
 
         # Prepare response
         response = {
-            'items': [{'id': p.id, 'name': p.name, 'price': p.price} for p in products],
+            'items': [{'id': p.id, 'name': p.name, 'price': p.price, 'category': p.category, 'area': p.area} for p in products],
             'total': total
         }
 
-        return jsonify(response)  # Ensure this line is included to return the JSON response
+        return jsonify(response)
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': 'An error occurred'}), 500
+
 
 @app.route('/products/<int:product_id>', methods=['DELETE'])
 def delete_product(product_id):
@@ -439,18 +464,32 @@ def download_offer(offer_id):
     response.headers['Content-Disposition'] = f'attachment; filename=offer_{offer_id}.pdf'
     return response
 #handles saving an offer finish button
+
 @app.route('/offers', methods=['POST'])
 def create_offer():
     data = request.json
-    new_offer = Offer(
-        client_id=data['clientId'],
-        products_details=json.dumps(data['products']),
-        total_price=data['totalPrice'],
-        final_price=data['finalPrice']
-    )
-    db.session.add(new_offer)
-    db.session.commit()
-    return jsonify({'message': 'Offer saved successfully', 'offerId': new_offer.id}), 201
+    client_id = data.get('clientId')
+    products_details = data.get('products_details')
+    total_price = data.get('totalPrice', 0)  # Default to 0 if not present
+    final_price = data.get('finalPrice', 0)  # Default to 0 if not present
+
+    if not client_id or not products_details:
+        return jsonify({'error': 'Missing required data'}), 400
+
+    try:
+        new_offer = Offer(
+            client_id=client_id,
+            products_details=json.dumps(products_details),  # Convert to JSON string
+            total_price=total_price,
+            final_price=final_price
+        )
+        db.session.add(new_offer)
+        db.session.commit()
+        return jsonify({'message': 'Offer created successfully', 'offerId': new_offer.id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 
 
 

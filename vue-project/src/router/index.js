@@ -55,25 +55,13 @@ const router = createRouter({
       component: ClientsManagement
     },
     {
-      path: '/select-category/:clientId',
+      path: '/product-category-selection/:clientId/:clientEmail?',
       name: 'ProductCategorySelection',
       component: ProductCategorySelection,
-      props: true
+      props: true,
     },
     {
-      path: '/select-products/:clientId/:categoryName',
-      name: 'ProductSelection',
-      component: ProductSelection,
-      props: true
-    },
-    {
-      path: '/product-category-selection/:clientId/:clientEmail',
-      name: 'ProductCategorySelection',
-      component: ProductCategorySelection,
-      props: true
-    },
-    {
-      path: '/product-selection/:categoryName/:clientId/:clientEmail',
+      path: '/product-selection/:clientId/:categoryName/:clientEmail?/:offerId?',
       name: 'ProductSelection',
       component: ProductSelection,
       props: true
@@ -81,15 +69,9 @@ const router = createRouter({
     {
       path: '/clients/:clientId',
       name: 'ClientDetails',
-      component: ClientDetails, // Add route for ClientDetails.vue
-      props: true
-    },
-    {
-      path: '/product-selection/:clientId/:offerId?',
-      name: 'ProductSelection',
-      component: ProductSelection,
-      props: true
-    },
+      component: ClientDetails,
+      props: true,
+    }
   ]
 })
 
