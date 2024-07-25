@@ -61,9 +61,10 @@
       </div>
     </v-toolbar>
 
-    <div v-if="Object.keys(groupedProducts.main).length > 0">
-      <h2>Main Products</h2>
-      <div v-for="(products, subcategory) in groupedProducts.main" :key="subcategory">
+    <!-- Complementary Products -->
+    <div v-if="Object.keys(groupedProducts.complementary).length > 0">
+      <h2>Complementary Products</h2>
+      <div v-for="(products, subcategory) in groupedProducts.complementary" :key="subcategory">
         <h3>{{ subcategory }}</h3>
         <v-data-table
           :headers="headers"
@@ -112,9 +113,10 @@
       </div>
     </div>
 
-    <div v-if="Object.keys(groupedProducts.complementary).length > 0">
-      <h2>Complementary Products</h2>
-      <div v-for="(products, subcategory) in groupedProducts.complementary" :key="subcategory">
+    <!-- Main Products -->
+    <div v-if="Object.keys(groupedProducts.main).length > 0">
+      <h2>Main Products</h2>
+      <div v-for="(products, subcategory) in groupedProducts.main" :key="subcategory">
         <h3>{{ subcategory }}</h3>
         <v-data-table
           :headers="headers"
@@ -198,14 +200,26 @@ export default {
     }
   },
   computed: {
+    filteredProducts() {
+      if (!this.search) {
+        return this.products;
+      }
+
+      const searchLower = this.search.toLowerCase();
+      return this.products.filter(product => 
+        product.name.toLowerCase().includes(searchLower) || 
+        product.category.toLowerCase().includes(searchLower) || 
+        product.subcategory.toLowerCase().includes(searchLower)
+      );
+    },
     groupedProducts() {
       const grouped = {
         main: {},
         complementary: {}
       };
 
-      this.products.forEach(product => {
-        const targetGroup = product.category === 'Main' ? 'main' : 'complementary';
+      this.filteredProducts.forEach(product => {
+        const targetGroup = product.category.toLowerCase() === 'main' ? 'main' : 'complementary';
 
         if (!grouped[targetGroup][product.subcategory]) {
           grouped[targetGroup][product.subcategory] = [];
