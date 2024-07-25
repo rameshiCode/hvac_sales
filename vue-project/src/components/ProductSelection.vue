@@ -124,7 +124,6 @@ export default {
       search: '',
       overallDiscount: '',
       totalPrice: 0,
-      finalDiscountedPrice: 0,
       headers: [
         { title: 'Product Name', value: 'name', align: 'start', sortable: true },
         { title: 'Quantity', value: 'quantity', align: 'center', sortable: false },
@@ -192,8 +191,6 @@ export default {
           const offerDetails = response.data;
           this.products = offerDetails.products_details;
           this.overallDiscount = offerDetails.overallDiscount;
-          this.categoryName = offerDetails.products_details.length > 0 ? offerDetails.products_details[0].category : '';
-          this.clientEmail = offerDetails.clientEmail;
           this.updateTotalPrice();
         })
         .catch(error => {
@@ -201,17 +198,15 @@ export default {
         });
     },
     updateTotalPrice() {
-      this.totalPrice = 0;  // Reset totalPrice before recalculating
-      this.products.forEach(item => {
+      this.totalPrice = this.products.reduce((acc, item) => {
         item.pretTotal = (item.price * item.quantity).toFixed(2);
         if (item.discount) {
           item.pretRedus = (item.pretTotal - (item.pretTotal * item.discount / 100)).toFixed(2);
         } else {
-          item.pretRedus = (item.pretTotal * (1 - this.overallDiscount / 100)).toFixed(2);
+          item.pretRedus = item.pretTotal;
         }
-        this.totalPrice += parseFloat(item.pretTotal);
-      });
-      this.finalDiscountedPrice = this.products.reduce((acc, item) => acc + parseFloat(item.pretRedus), 0).toFixed(2);
+        return acc + parseFloat(item.pretRedus);
+      }, 0).toFixed(2);
     },
     validateDiscount(value) {
       return !isNaN(value) && value >= 0 && value <= 100;
@@ -254,18 +249,23 @@ export default {
       });
     },
     finishOffer() {
+      console.log("Finishing offer with totalPrice:", this.totalPrice);
       const url = `${this.$apiUrl}/offers`;
       const offerData = {
         clientId: this.clientId,
         products_details: this.products.filter(p => p.quantity > 0),
         totalPrice: this.totalPrice,
-        finalPrice: this.finalDiscountedPrice
+        finalPrice: this.totalPrice
       };
 
       axios.post(url, offerData)
         .then(response => {
           alert('Offer saved successfully!');
-          this.$router.push({ name: 'ClientDetails', params: { clientId: this.clientId }});
+          this.$router.push({ 
+            name: 'ClientDetails', 
+            params: { clientId: this.clientId },
+            query: { totalPrice: this.totalPrice }
+          });
         })
         .catch(error => {
           console.error('Error saving the offer:', error);
