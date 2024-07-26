@@ -172,18 +172,19 @@
   </div>
 </template>
 
+
 <script>
 import axios from 'axios';
 
 export default {
-  props: ['clientId', 'categoryName', 'clientEmail', 'offerId'],
+  props: ['clientId', 'categoryName', 'clientEmail', 'offerId', 'offerType'],
   data() {
     return {
       products: [],
       search: '',
       overallDiscount: '',
       totalPrice: 0,
-      selectedOfferType: 'standard',
+      selectedOfferType: this.offerType || 'standard',
       offerTypes: ['standard', 'comfort', 'premium'],
       headers: [
         { title: 'Product Name', value: 'name', align: 'start', sortable: true },
@@ -202,6 +203,7 @@ export default {
     console.log('Received Client Email:', this.clientEmail);
     console.log('Received Category Name:', this.categoryName);
     console.log('Received Offer ID:', this.offerId);
+    console.log('Received Offer Type:', this.offerType);  // Log the received offer type
     if (this.offerId) {
       this.loadExistingOffer(this.offerId);
     } else {
@@ -235,7 +237,22 @@ export default {
         params: { category: this.categoryName }
       }).then(response => {
         const offerDetails = response.data;
-        const storedProducts = offerDetails.products_details.map(item => ({
+        console.log('Offer Details:', offerDetails);  // Log the offer details
+
+        // Ensure products_details is an array
+        let productsDetails = [];
+        try {
+          productsDetails = Array.isArray(offerDetails.products_details) ? offerDetails.products_details : JSON.parse(offerDetails.products_details);
+
+          if (!Array.isArray(productsDetails)) {
+            throw new Error('products_details is not an array');
+          }
+        } catch (e) {
+          console.error('Error parsing products_details:', e);
+          productsDetails = [];
+        }
+
+        const storedProducts = productsDetails.map(item => ({
           ...item,
           price: parseFloat(item.price),
           quantity: item.quantity || 0,
@@ -245,6 +262,7 @@ export default {
           category: item.category,
           subcategory: item.subcategory
         }));
+
         const categoryProducts = offerDetails.category_products.map(item => ({
           ...item,
           price: parseFloat(item.price),
@@ -267,6 +285,8 @@ export default {
 
         this.products = Array.from(productMap.values());
         this.overallDiscount = offerDetails.overallDiscount || 0;
+        this.selectedOfferType = offerDetails.offer_type || 'standard';  // Update the selected offer type
+        console.log('Updated Offer Type:', this.selectedOfferType);  // Log the updated offer type
         this.categorizeProducts();
         this.updateTotalPrice();
       }).catch(error => {

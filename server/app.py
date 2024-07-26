@@ -312,13 +312,7 @@ def generate_offer():
 @app.route('/clients/<int:client_id>/offers', methods=['GET'])
 def get_client_offers(client_id):
     offers = Offer.query.filter_by(client_id=client_id).all()
-    return jsonify([{
-        'id': offer.id,
-        'products_details': offer.products_details,
-        'total_price': offer.total_price,
-        'final_price': offer.final_price,
-        'created_at': offer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # formatting datetime
-    } for offer in offers]), 200
+    return jsonify([offer.to_dict() for offer in offers]), 200 
 
 @app.route('/offers/<int:offer_id>', methods=['GET'])
 def get_offer(offer_id):
@@ -326,14 +320,17 @@ def get_offer(offer_id):
     if not offer:
         return jsonify({'error': 'Offer not found'}), 404
 
-    offer_details = {
-        'id': offer.id,
-        'client_id': offer.client_id,
-        'products_details': json.loads(offer.products_details),
-        'total_price': offer.total_price,
-        'final_price': offer.final_price,
-        'created_at': offer.created_at.isoformat()
-    }
+    offer_details = offer.to_dict()
+
+    # Ensure products_details is a JSON array string
+    try:
+        products_details = json.loads(offer.products_details)
+        if not isinstance(products_details, list):
+            raise ValueError('products_details is not a list')
+        offer_details['products_details'] = products_details
+    except Exception as e:
+        return jsonify({'error': 'Failed to parse products_details', 'details': str(e)}), 500
+
     selected_category = request.args.get('category')
     if selected_category:
         products = Product.query.filter_by(category=selected_category).all()
@@ -341,6 +338,7 @@ def get_offer(offer_id):
         offer_details['category_products'] = products_list
 
     return jsonify(offer_details), 200
+
 
 @app.route('/clients/<int:client_id>', methods=['GET'])
 def get_client(client_id):
@@ -380,27 +378,27 @@ def download_offer(offer_id):
 @app.route('/offers', methods=['POST'])
 def create_offer():
     data = request.get_json()
-    # print("Received offer data:", data)
-    total_price = data.get('totalPrice', 0)
-    final_price = data.get('finalPrice', 0)
-
+    print("Received offer data:", data)
+    
     try:
         new_offer = Offer(
             client_id=data['clientId'],
-            products_details=json.dumps(data['products']),  # Convert to JSON string
-            total_price=total_price,
-            final_price=final_price
+            offer_type=data['offerType'],  # Add this line
+            products_details=json.dumps(data['products']),
+            total_price=data['totalPrice'],
+            final_price=data['finalPrice']
         )
         db.session.add(new_offer)
         db.session.commit()
         print("Offer created successfully:", new_offer)
-        return jsonify({'message': 'Offer created successfully'}), 201
+        return jsonify(new_offer.to_dict()), 201
     except KeyError as e:
         print(f"Missing key: {str(e)}")
         return jsonify({'error': f'Missing key: {str(e)}'}), 400
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 
 if __name__ == '__main__':

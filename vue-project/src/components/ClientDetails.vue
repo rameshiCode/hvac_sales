@@ -18,8 +18,8 @@
       <template v-slot:item.offer_id="{ item }">
         <span>{{ item.id }}</span>
       </template>
-      <template v-slot:item.category="{ item }">
-        <span>{{ item.category }}</span>
+      <template v-slot:item.offer_type="{ item }">
+        <span>{{ item.offer_type }}</span>
       </template>
       <template v-slot:item.total_price="{ item }">
         <span>{{ item.totalPrice }}</span>
@@ -43,7 +43,7 @@ export default {
       totalPrice: this.$route.query.totalPrice || 0,
       headers: [
         { title: 'Offer ID', value: 'offer_id' },
-        { title: 'Category', value: 'category' },
+        { title: 'Offer Type', value: 'offer_type' },
         { title: 'Total Price', value: 'total_price' },
         { title: 'Final Price', value: 'final_price' },
         { title: 'Created At', value: 'created_at' },
@@ -70,7 +70,11 @@ export default {
         .then(response => {
           // Ensure the response data is an array of offers
           if (Array.isArray(response.data)) {
+            console.log('Offers:', response.data);
             this.offers = response.data.map(offer => {
+              // Log the offer type
+              console.log('Offer Type:', offer.offer_type);
+
               // Ensure products_details is a JSON string that needs to be parsed
               try {
                 offer.products_details = JSON.parse(offer.products_details);
@@ -92,14 +96,16 @@ export default {
         });
     },
     goToEditOffer(offer) {
+      console.log('Sending Offer Type:', offer.offer_type);  // Log the offer type
       this.$router.push({ 
         name: 'ProductSelection', 
         params: { 
           offerId: offer.id, 
           clientId: this.clientId, 
           clientEmail: this.client.email, 
-          categoryName: offer.category,
-          totalPrice: offer.totalPrice
+          categoryName: offer.category,  // Ensure categoryName is passed
+          totalPrice: offer.totalPrice,
+          offerType: offer.offer_type  // Ensure offerType is passed
         }
       });
     }

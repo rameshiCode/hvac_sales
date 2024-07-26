@@ -1,3 +1,4 @@
+import json
 from . import db
 # from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -75,6 +76,7 @@ class Offer(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'client_name': self.client.name  # Assuming client is always present; adjust if nullable
         }
+
 
 
 Client.offers = db.relationship('Offer', order_by=Offer.id, back_populates='client')
