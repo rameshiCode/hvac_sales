@@ -232,116 +232,147 @@ export default {
     }
   },
   methods: {
-    loadProducts() {
-      axios.get(`${this.$apiUrl}/products`, {
-        params: {
-          category: this.categoryName
-        }
-      }).then(response => {
-        this.products = response.data.items.map(item => ({
-          ...item,
-          price: parseFloat(item.price),
-          quantity: 0,
-          discount: "",
-          pretTotal: 0,
-          pretRedus: 0,
-          category: item.category,
-          subcategory: item.subcategory
-        }));
-      }).catch(error => {
-        console.error('Error fetching products:', error);
-      });
-    },
-    loadExistingOffer(offerId) {
-      axios.get(`${this.$apiUrl}/offers/${offerId}`)
-        .then(response => {
-          const offerDetails = response.data;
-          this.products = offerDetails.products_details;
-          this.overallDiscount = offerDetails.overallDiscount;
-          this.updateTotalPrice();
-        })
-        .catch(error => {
-          console.error('Error loading existing offer:', error);
-        });
-    },
-    updateTotalPrice() {
-      this.totalPrice = this.products.reduce((acc, item) => {
-        item.pretTotal = (item.price * item.quantity).toFixed(2);
-        if (item.discount) {
-          item.pretRedus = (item.pretTotal - (item.pretTotal * item.discount / 100)).toFixed(2);
-        } else {
-          item.pretRedus = item.pretTotal;
-        }
-        return acc + parseFloat(item.pretRedus);
-      }, 0).toFixed(2);
-    },
-    validateDiscount(value) {
-      return !isNaN(value) && value >= 0 && value <= 100;
-    },
-    sendOffer() {
-      const url = `${this.$apiUrl}/generate-offer?action=email`;
-      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
+  loadProducts() {
+    axios.get(`${this.$apiUrl}/products`, {
+      params: {
+        category: this.categoryName
+      }
+    }).then(response => {
+      this.products = response.data.items.map(item => ({
+        ...item,
+        price: parseFloat(item.price),
+        quantity: 0,
+        discount: "",
+        pretTotal: 0,
+        pretRedus: 0,
+        category: item.category,
+        subcategory: item.subcategory
+      }));
+    }).catch(error => {
+      console.error('Error fetching products:', error);
+    });
+  },
+  loadExistingOffer(offerId) {
+    axios.get(`${this.$apiUrl}/offers/${offerId}`, {
+      params: { category: this.categoryName }
+    }).then(response => {
+      const offerDetails = response.data;
+      const storedProducts = offerDetails.products_details.map(item => ({
+        ...item,
+        price: parseFloat(item.price),
+        quantity: item.quantity || 0,
+        discount: item.discount || "",
+        pretTotal: item.pretTotal || 0,
+        pretRedus: item.pretRedus || 0,
+        category: item.category,
+        subcategory: item.subcategory
+      }));
+      const categoryProducts = offerDetails.category_products.map(item => ({
+        ...item,
+        price: parseFloat(item.price),
+        quantity: 0,
+        discount: "",
+        pretTotal: 0,
+        pretRedus: 0,
+        category: item.category,
+        subcategory: item.subcategory
+      }));
 
-      axios.post(url, {
-          clientId: this.clientId,
-          clientEmail: this.clientEmail,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0)
-      }).then(() => {
-          alert('Offer sent successfully!');
-      }).catch(error => {
-          console.error('Error sending offer:', error);
-          alert('There was an error sending the offer. Please try again.');
+      // Merge storedProducts and categoryProducts
+      const productMap = new Map();
+      storedProducts.forEach(product => productMap.set(product.id, product));
+      categoryProducts.forEach(product => {
+        if (!productMap.has(product.id)) {
+          productMap.set(product.id, product);
+        }
       });
-    },
-    downloadPDF() {
-      const url = `${this.$apiUrl}/generate-offer?action=download`;
-      const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
 
-      axios.post(url, {
-          clientId: this.clientId,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0)
-      }, {
-        responseType: 'blob'
-      }).then(response => {
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = 'offer.pdf';
-          link.click();
-      }).catch(error => {
-          console.error('Error downloading PDF:', error);
-          alert('There was an error downloading the PDF. Please try again.');
-      });
-    },
-    finishOffer() {
-      console.log("Finishing offer with totalPrice:", this.totalPrice);
-      const url = `${this.$apiUrl}/offers`;
-      const offerData = {
+      this.products = Array.from(productMap.values());
+      this.overallDiscount = offerDetails.overallDiscount || 0;
+      this.updateTotalPrice();
+    }).catch(error => {
+      console.error('Error loading existing offer:', error);
+    });
+  },
+  updateTotalPrice() {
+    this.totalPrice = this.products.reduce((acc, item) => {
+      item.pretTotal = (item.price * item.quantity).toFixed(2);
+      if (item.discount) {
+        item.pretRedus = (item.pretTotal - (item.pretTotal * item.discount / 100)).toFixed(2);
+      } else {
+        item.pretRedus = item.pretTotal;
+      }
+      return acc + parseFloat(item.pretRedus);
+    }, 0).toFixed(2);
+  },
+  validateDiscount(value) {
+    return !isNaN(value) && value >= 0 && value <= 100;
+  },
+  sendOffer() {
+    const url = `${this.$apiUrl}/generate-offer?action=email`;
+    const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
+
+    axios.post(url, {
         clientId: this.clientId,
-        products: this.products.filter(p => p.quantity > 0),
-        totalPrice: this.totalPrice,
-        finalPrice: this.totalPrice
-      };
+        clientEmail: this.clientEmail,
+        overallDiscount: overallDiscountValue,
+        products: this.products.filter(p => p.quantity > 0)
+    }).then(() => {
+        alert('Offer sent successfully!');
+    }).catch(error => {
+        console.error('Error sending offer:', error);
+        alert('There was an error sending the offer. Please try again.');
+    });
+  },
+  downloadPDF() {
+    const url = `${this.$apiUrl}/generate-offer?action=download`;
+    const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
 
-      console.log("Sending offer data:", offerData);
+    axios.post(url, {
+        clientId: this.clientId,
+        overallDiscount: overallDiscountValue,
+        products: this.products.filter(p => p.quantity > 0)
+    }, {
+      responseType: 'blob'
+    }).then(response => {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'offer.pdf';
+        link.click();
+    }).catch(error => {
+        console.error('Error downloading PDF:', error);
+        alert('There was an error downloading the PDF. Please try again.');
+    });
+  },
+  finishOffer() {
+    console.log("Finishing offer with totalPrice:", this.totalPrice);
+    const url = `${this.$apiUrl}/offers`;
+    const offerData = {
+      clientId: this.clientId,
+      products: this.products.filter(p => p.quantity > 0),
+      totalPrice: this.totalPrice,
+      finalPrice: this.totalPrice
+    };
 
-      axios.post(url, offerData)
-        .then(response => {
-          alert('Offer saved successfully!');
-          this.$router.push({ 
-            name: 'ClientDetails', 
-            params: { clientId: this.clientId },
-            query: { totalPrice: this.totalPrice }
-          });
-        })
-        .catch(error => {
-          console.error('Error saving the offer:', error);
-          alert('There was an error saving the offer. Please try again.');
+    console.log("Sending offer data:", offerData);
+
+    axios.post(url, offerData)
+      .then(response => {
+        alert('Offer saved successfully!');
+        this.$router.push({ 
+          name: 'ClientDetails', 
+          params: { clientId: this.clientId },
+          query: { totalPrice: this.totalPrice }
         });
-    }
+      })
+      .catch(error => {
+        console.error('Error saving the offer:', error);
+        alert('There was an error saving the offer. Please try again.');
+      });
   }
+}
+
 };
 </script>
 
