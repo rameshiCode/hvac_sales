@@ -1,21 +1,13 @@
 <template>
-    <div class="ping-view">
-      <h1>Ping Pong Test</h1>
-      <v-btn @click="sendPing" class="md1">Ping</v-btn>
-      <p>Response: {{ response }}</p>
-      <v-icon> mdi-account </v-icon>
-      <v-icon>mdi-home</v-icon>
-      <button class="v-btn">button md1</button>
-    </div>
-  </template>
-  
+  <div class="ping-view">
+    <h1>Ping Pong Test</h1>
+    <v-btn @click="sendPing" class="md1">Ping</v-btn>
+    <p>Response: {{ response }}</p>
+  </div>
+</template>
 
-  <!-- <script setup>
-  import { mdiAccount } from '@mdi/js'
-</script> -->
-
-  <script >
-  import axios from 'axios';
+<script >
+  import apiClient from '@/api/apiClient';
 
   export default {
     name: 'PingView',
@@ -26,7 +18,7 @@
     },
     methods: {
       sendPing() {
-        axios.get(`${this.$apiUrl}/ping`)
+        apiClient.get(`${this.$apiUrl}/ping`)
           .then(result => {
             this.response = result.data;
           })

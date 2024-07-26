@@ -1,41 +1,27 @@
-### hvac_sales
-hvac_sales ecaldura
+# hvac_sales
 
+### Python environment
 ```bash
 python3 -m venv .venv
-
 . .venv/bin/activate
-
-pip install Flask
-
-pip install Flask Flask-Cors python-dotenv
-
-pip install -U Flask-SQLAlchemy
-
 pip install -r requirements.txt
-
 ```
-### NODE INSTALL ###
-```
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-```
-```
-### START FLASK ###
-flask run --port=5001 --debug
-```
+### NODE environment 
+[Install nvm](https://github.com/nvm-sh/nvm)
 ```bash
-npm install -g npm
-
-npm create vue@latest
-cd projectname
-
+nvm install node # "node" is an alias for the latest version
+nvm install-latest-npm
+```
+### Install project dependencies
+```bash
+cd vue-project
 npm install
-
-npm run format
+```
+### Start npm  
+```bash
 npm run dev
+```
+### Start Flask server 
+```bash
+flask run --port=5001 --debug
 ```
