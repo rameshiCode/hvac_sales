@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-toolbar color="deep-purple accent-3" dark fixed app>
+      <!-- Toolbar Content -->
       <v-spacer></v-spacer>
       <v-col sm="12" md="6" lg="auto">
         <v-text-field
@@ -61,111 +62,108 @@
       </div>
     </v-toolbar>
 
-    <!-- Complementary Products -->
-    <div v-if="Object.keys(groupedProducts.complementary).length > 0">
-      <h2>Complementary Products</h2>
-      <div v-for="(products, subcategory) in groupedProducts.complementary" :key="subcategory">
-        <h3>{{ subcategory }}</h3>
-        <v-data-table
-          :headers="headers"
-          :items="products"
-          item-key="id"
-          class="elevation-1"
-          :items-per-page="5"
-        >
-          <template v-slot:item.price="{ item }">
-            ${{ item.price }}
-          </template>
-          <template v-slot:item.quantity="{ item }">
-            <v-text-field
-              v-model.number="item.quantity"
-              type="number"
-              min="0"
-              @input="updateTotalPrice"
-              dense
-              persistent-placeholder
-            ></v-text-field>
-          </template>
-          <template v-slot:item.discount="{ item }">
-            <v-text-field
-              v-model="item.discount"
-              hide-details
-              variant="outlined"
-              density="compact"
-              persistent-placeholder
-              @blur="updateTotalPrice"
-              @keyup.enter="updateTotalPrice"
-              :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
-            ></v-text-field>
-          </template>
-          <template v-slot:item.pretTotal="{ item }">
-            <span>{{ item.pretTotal }}</span>
-          </template>
-          <template v-slot:item.pretRedus="{ item }">
-            <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
-          </template>
-          <template v-slot:no-data>
-            <v-alert color="error" icon="mdi-alert">
-              No products found.
-            </v-alert>
-          </template>
-        </v-data-table>
-      </div>
+    <!-- Main Products -->
+    <div v-if="mainProducts.length > 0">
+      <h2>Main Products</h2>
+      <v-data-table
+        :headers="headers"
+        :items="mainProducts"
+        item-key="id"
+        class="elevation-1"
+        :items-per-page="5"
+      >
+        <template v-slot:item.price="{ item }">
+          ${{ item.price }}
+        </template>
+        <template v-slot:item.quantity="{ item }">
+          <v-text-field
+            v-model.number="item.quantity"
+            type="number"
+            min="0"
+            @input="updateTotalPrice"
+            dense
+            persistent-placeholder
+          ></v-text-field>
+        </template>
+        <template v-slot:item.discount="{ item }">
+          <v-text-field
+            v-model="item.discount"
+            hide-details
+            variant="outlined"
+            density="compact"
+            persistent-placeholder
+            @blur="updateTotalPrice"
+            @keyup.enter="updateTotalPrice"
+            :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
+          ></v-text-field>
+        </template>
+        <template v-slot:item.pretTotal="{ item }">
+          <span>{{ item.pretTotal }}</span>
+        </template>
+        <template v-slot:item.pretRedus="{ item }">
+          <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
+        </template>
+        <template v-slot:no-data>
+          <v-alert color="error" icon="mdi-alert">
+            No products found.
+          </v-alert>
+        </template>
+      </v-data-table>
     </div>
 
-    <!-- Main Products -->
-    <div v-if="Object.keys(groupedProducts.main).length > 0">
-      <h2>Main Products</h2>
-      <div v-for="(products, subcategory) in groupedProducts.main" :key="subcategory">
-        <h3>{{ subcategory }}</h3>
-        <v-data-table
-          :headers="headers"
-          :items="products"
-          item-key="id"
-          class="elevation-1"
-          :items-per-page="5"
-        >
-          <template v-slot:item.price="{ item }">
-            ${{ item.price }}
-          </template>
-          <template v-slot:item.quantity="{ item }">
-            <v-text-field
-              v-model.number="item.quantity"
-              type="number"
-              min="0"
-              @input="updateTotalPrice"
-              dense
-              persistent-placeholder
-            ></v-text-field>
-          </template>
-          <template v-slot:item.discount="{ item }">
-            <v-text-field
-              v-model="item.discount"
-              hide-details
-              variant="outlined"
-              density="compact"
-              persistent-placeholder
-              @blur="updateTotalPrice"
-              @keyup.enter="updateTotalPrice"
-              :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
-            ></v-text-field>
-          </template>
-          <template v-slot:item.pretTotal="{ item }">
-            <span>{{ item.pretTotal }}</span>
-          </template>
-          <template v-slot:item.pretRedus="{ item }">
-            <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
-          </template>
-          <template v-slot:no-data>
-            <v-alert color="error" icon="mdi-alert">
-              No products found.
-            </v-alert>
-          </template>
-        </v-data-table>
-      </div>
+    <!-- Complementary Products -->
+    <div v-if="complementaryProducts.length > 0">
+      <h2>Complementary Products</h2>
+      <v-data-table
+        :headers="headers"
+        :items="complementaryProducts"
+        item-key="id"
+        class="elevation-1"
+        :items-per-page="5"
+      >
+        <template v-slot:item.price="{ item }">
+          ${{ item.price }}
+        </template>
+        <template v-slot:item.quantity="{ item }">
+          <v-text-field
+            v-model.number="item.quantity"
+            type="number"
+            min="0"
+            @input="updateTotalPrice"
+            dense
+            persistent-placeholder
+          ></v-text-field>
+        </template>
+        <template v-slot:item.discount="{ item }">
+          <v-text-field
+            v-model="item.discount"
+            hide-details
+            variant="outlined"
+            density="compact"
+            persistent-placeholder
+            @blur="updateTotalPrice"
+            @keyup.enter="updateTotalPrice"
+            :rules="[(v) => (validateDiscount(v) ? true : 'Not a valid value')]"
+          ></v-text-field>
+        </template>
+        <template v-slot:item.pretTotal="{ item }">
+          <span>{{ item.pretTotal }}</span>
+        </template>
+        <template v-slot:item.pretRedus="{ item }">
+          <span v-if="item.pretRedus">{{ item.pretRedus }}</span>
+        </template>
+        <template v-slot:no-data>
+          <v-alert color="error" icon="mdi-alert">
+            No products found.
+          </v-alert>
+        </template>
+      </v-data-table>
     </div>
   </div>
 </template>
+
+
+
 
 <script>
 import axios from 'axios';
@@ -186,52 +184,22 @@ export default {
         { title: 'Preț Total', value: 'pretTotal', align: 'end', sortable: false },
         { title: 'Preț Redus', value: 'pretRedus', align: 'end', sortable: false }
       ],
+      mainProducts: [],
+      complementaryProducts: [],
     };
   },
   created() {
-    console.log('Received Client ID:', this.clientId);
-    console.log('Received Client Email:', this.clientEmail);
-    console.log('Received Category Name:', this.categoryName);
-    console.log('Received Offer ID:', this.offerId);
-    if (this.offerId) {
-      this.loadExistingOffer(this.offerId);
-    } else {
-      this.loadProducts();
-    }
-  },
-  computed: {
-    filteredProducts() {
-      if (!this.search) {
-        return this.products;
-      }
-
-      const searchLower = this.search.toLowerCase();
-      return this.products.filter(product => 
-        product.name.toLowerCase().includes(searchLower) || 
-        product.category.toLowerCase().includes(searchLower) || 
-        product.subcategory.toLowerCase().includes(searchLower)
-      );
-    },
-    groupedProducts() {
-      const grouped = {
-        main: {},
-        complementary: {}
-      };
-
-      this.filteredProducts.forEach(product => {
-        const targetGroup = product.category.toLowerCase() === 'main' ? 'main' : 'complementary';
-
-        if (!grouped[targetGroup][product.subcategory]) {
-          grouped[targetGroup][product.subcategory] = [];
-        }
-
-        grouped[targetGroup][product.subcategory].push(product);
-      });
-
-      return grouped;
-    }
-  },
-  methods: {
+  console.log('Received Client ID:', this.clientId);
+  console.log('Received Client Email:', this.clientEmail);
+  console.log('Received Category Name:', this.categoryName);
+  console.log('Received Offer ID:', this.offerId);
+  if (this.offerId) {
+    this.loadExistingOffer(this.offerId);
+  } else {
+    this.loadProducts();
+  }
+},
+methods: {
   loadProducts() {
     axios.get(`${this.$apiUrl}/products`, {
       params: {
@@ -248,6 +216,7 @@ export default {
         category: item.category,
         subcategory: item.subcategory
       }));
+      this.categorizeProducts();
     }).catch(error => {
       console.error('Error fetching products:', error);
     });
@@ -289,10 +258,17 @@ export default {
 
       this.products = Array.from(productMap.values());
       this.overallDiscount = offerDetails.overallDiscount || 0;
+      this.categorizeProducts();
       this.updateTotalPrice();
     }).catch(error => {
       console.error('Error loading existing offer:', error);
     });
+  },
+  categorizeProducts() {
+    this.mainProducts = this.products.filter(product => product.subcategory.toLowerCase() === 'main');
+    this.complementaryProducts = this.products.filter(product => product.subcategory.toLowerCase() !== 'main');
+    console.log("Main Products:", this.mainProducts);
+    console.log("Complementary Products:", this.complementaryProducts);
   },
   updateTotalPrice() {
     this.totalPrice = this.products.reduce((acc, item) => {
@@ -372,8 +348,9 @@ export default {
       });
   }
 }
+}
 
-};
+
 </script>
 
 <style>
