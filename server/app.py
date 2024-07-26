@@ -17,9 +17,11 @@ from flask import (
 )
 from flask_cors import CORS
 from flask_mail import Mail, Message
+
 from models.models import Client, Offer, Product, db
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
+
 
 load_dotenv()
 
