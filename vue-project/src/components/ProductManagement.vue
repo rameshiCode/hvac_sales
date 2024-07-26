@@ -1,65 +1,95 @@
 <template>
-  <div>
-    <h1>Product Management</h1>
-    <input type="file" @change="handleFileUpload" ref="fileUploader">
-    <button @click="importProducts">Import CSV</button>
-    <button @click="exportProducts">Export CSV</button>
-  </div>
-</template>
-
-
-
-<script>
-import axios from 'axios';
-
-export default {
-  name: 'ProductManagement',
-  data() {
-    return {
-      file: null,
-      $apiUrl: 'http://localhost:5001'  // Ensure this is correctly set
-    };
-  },
-  methods: {
-    handleFileUpload(event) {
-      this.file = event.target.files[0];
-    },
-    importProducts() {
-      if (!this.file) {
-        alert('Please select a file first!');
-        return;
-      }
-      let formData = new FormData();
-      formData.append('file', this.file);
-
-      axios.post(`${this.$apiUrl}/import`, formData)
+    <div class="product-manager">
+      <h1>Product Manager</h1>
+      
+      <!-- Hidden file input for triggering upload -->
+      <input type="file" ref="fileInput" style="display: none;" @change="uploadFile" />
+  
+      <div class="button-group">
+        <button @click="triggerFileInput">Import Products</button>
+        <button @click="exportProducts">Export Products</button>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import apiClient from '@/api/apiClient';
+  export default {
+    methods: {
+      triggerFileInput() {
+        this.$refs.fileInput.click();
+      },
+      uploadFile(event) {
+        const file = event.target.files[0];
+        if (!file) {
+          return; 
+        }
+ 
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        apiClient.post(`${this.$apiUrl}/import`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
         .then(() => {
-          this.$router.push('/');  // Redirect to Home after successful import
+          alert('File imported successfully');
         })
         .catch(error => {
-          console.error('Import failed:', error);
-          alert('Failed to import products');
+          alert(error.response.data.error || 'Failed to import file');
         });
-    },
-    exportProducts() {
-      axios.get(`${this.$apiUrl}/export-products`, { responseType: 'blob' })
+      },
+      exportProducts() {
+        apiClient({
+          url: '/export',
+          method: 'GET',
+          responseType: 'blob', // Important for handling the download
+        })
         .then(response => {
           const url = window.URL.createObjectURL(new Blob([response.data]));
           const link = document.createElement('a');
           link.href = url;
-          link.setAttribute('download', 'products.csv');
+          link.setAttribute('download', 'products.csv'); // File name for download
           document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
+          link.parentNode.removeChild(link);
+          alert('Products exported successfully');
         })
-        .catch(error => {
-          console.error('Export failed:', error);
+        .catch(() => {
           alert('Failed to export products');
         });
+      },
     }
+  };
+  </script>
+  
+  <style scoped>
+  .product-manager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
   }
-};
-
-
-</script>
+  
+  .button-group {
+    display: flex;
+    gap: 20px;
+  }
+  
+  button {
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  </style>
+  
