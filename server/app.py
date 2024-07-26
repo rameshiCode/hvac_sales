@@ -433,14 +433,24 @@ def get_offer(offer_id):
     offer = Offer.query.get(offer_id)
     if not offer:
         return jsonify({'error': 'Offer not found'}), 404
-    return jsonify({
+    
+    offer_details = {
         'id': offer.id,
         'client_id': offer.client_id,
         'products_details': json.loads(offer.products_details),
         'total_price': offer.total_price,
         'final_price': offer.final_price,
         'created_at': offer.created_at.isoformat()
-    }), 200
+    }
+
+    # Fetch products in the same category as the offer
+    selected_category = request.args.get('category')
+    if selected_category:
+        products = Product.query.filter_by(category=selected_category).all()
+        products_list = [product.to_dict() for product in products]
+        offer_details['category_products'] = products_list
+
+    return jsonify(offer_details), 200
 
 
 
