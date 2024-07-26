@@ -21,11 +21,12 @@ from flask_mail import Mail, Message
 from models.models import Client, Offer, Product, db
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
+from flask_migrate import Migrate
 
 
 load_dotenv()
-
 app = Flask(__name__)
+migrate = Migrate(app, db)
 CORS(app)
 mail = Mail(app)
 

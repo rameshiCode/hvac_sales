@@ -53,6 +53,7 @@ class Client(db.Model):
 class Offer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    offer_type = db.Column(db.String(50), nullable=False)  # Add this line
     products_details = db.Column(db.Text, nullable=False)  # JSON storing product details
     total_price = db.Column(db.Float, nullable=False)
     final_price = db.Column(db.Float, nullable=False)
@@ -61,5 +62,19 @@ class Offer(db.Model):
 
     def __repr__(self):
         return f'<Offer for {self.client.name}>'
+
+    def to_dict(self):
+        """Return a dictionary representation of an Offer."""
+        return {
+            'id': self.id,
+            'client_id': self.client_id,
+            'offer_type': self.offer_type,
+            'products_details': self.products_details,
+            'total_price': self.total_price,
+            'final_price': self.final_price,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'client_name': self.client.name  # Assuming client is always present; adjust if nullable
+        }
+
 
 Client.offers = db.relationship('Offer', order_by=Offer.id, back_populates='client')
