@@ -9,6 +9,7 @@
     >
       <template v-slot:item.actions="{ item }">
         <v-btn color="primary" @click="viewOffers(item)">View Offers</v-btn>
+        <v-btn color="secondary" @click="downloadPdf(item)">Download PDF</v-btn>
       </template>
     </v-data-table>
 
@@ -36,6 +37,7 @@ export default {
       categoryOffers: [],
       offers: [],
       selectedCategoryOfferId: null,
+      selectedCategoryName: '', // Added to store the selected category name
       categoryHeaders: [
         { text: 'Category Name', value: 'category_name' },
         { text: 'Final Price', value: 'final_price' },
@@ -43,7 +45,7 @@ export default {
         { text: 'Actions', value: 'actions', sortable: false }
       ],
       offerHeaders: [
-        { text: 'Offer Type', value: 'offer_type' },
+        { text: 'Offer Type', value: 'offer_type' },  // Display offer type
         { text: 'Total Price', value: 'total_price' },
         { text: 'Final Price', value: 'final_price' },
         { text: 'Created At', value: 'created_at' },
@@ -77,40 +79,51 @@ export default {
         });
     },
     viewOffers(categoryOffer) {
-    console.log('Viewing offers for category offer:', categoryOffer);
-    this.selectedCategoryOfferId = categoryOffer.id;
-    this.selectedCategoryName = categoryOffer.category_name; // Set the category name here
-    axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers`)
+      console.log('Viewing offers for category offer:', categoryOffer);
+      this.selectedCategoryOfferId = categoryOffer.id;
+      this.selectedCategoryName = categoryOffer.category_name; // Set the category name here
+      axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers`)
         .then(response => {
-            this.offers = response.data.map(offer => ({
-                ...offer,
-                category_name: this.selectedCategoryName // Ensure the category name is included in each offer
-            }));
-            console.log('Fetched offers for category:', this.offers);
+          this.offers = response.data.map(offer => ({
+            ...offer,
+            category_name: this.selectedCategoryName // Ensure the category name is included in each offer
+          }));
+          console.log('Fetched offers for category:', this.offers);
         })
         .catch(error => {
-            console.error('Error fetching offers:', error);
+          console.error('Error fetching offers:', error);
         });
-},
-goToEditOffer(offer) {
-    if (!offer.category_name) {
+    },
+    goToEditOffer(offer) {
+      if (!offer.category_name) {
         console.error('Category name is missing from the offer:', offer);
         return;
-    }
-    console.log('Navigating to edit offer with details:', offer);
-    this.$router.push({
+      }
+      console.log('Navigating to edit offer with details:', offer);
+      this.$router.push({
         name: 'ProductSelection',
         params: {
-            clientId: offer.client_id,
-            categoryName: offer.category_name,
-            offerId: offer.id,
-            offerType: offer.offer_type
+          clientId: offer.client_id,
+          categoryName: offer.category_name,
+          offerId: offer.id,
+          offerType: offer.offer_type
         }
-    });
-}
-
-
-
+      });
+    },
+    downloadPdf(categoryOffer) {
+      console.log('Downloading PDF for category offer:', categoryOffer);
+      axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers/pdf`, { responseType: 'blob' })
+        .then(response => {
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = `offers_${categoryOffer.id}.pdf`;
+          link.click();
+        })
+        .catch(error => {
+          console.error('Error downloading PDF:', error);
+        });
+    }
   }
 };
 </script>

@@ -2,6 +2,7 @@ import io
 import json
 import os
 from pathlib import Path
+import pdfkit
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -23,7 +24,7 @@ from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
 
-
+pdfkit_config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 load_dotenv()
 app = Flask(__name__)
 migrate = Migrate(app, db)
@@ -48,6 +49,7 @@ app.config['UPLOAD_FOLDER'].mkdir(parents=True, exist_ok=True)
 db.init_app(app)
 with app.app_context():
     db.create_all()
+
 
 @app.route('/ping', methods=['GET'])
 def ping_pong():
@@ -475,6 +477,33 @@ def create_category_offer():
     db.session.commit()
     
     return jsonify(new_category_offer.to_dict()), 201
+
+@app.route('/category-offers/<int:category_offer_id>/offers/pdf', methods=['GET'])
+def download_offers_pdf(category_offer_id):
+    category_offer = CategoryOffer.query.get_or_404(category_offer_id)
+    offers = Offer.query.filter_by(category_offer_id=category_offer_id).all()
+    client = Client.query.get_or_404(category_offer.client_id)
+    
+    # Pass the json module to the template context
+    rendered = render_template(
+        'offers_bundle_template.html',
+        client=client,
+        category_offer=category_offer,
+        offers=offers,
+        json=json
+    )
+    
+    try:
+        pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config)
+    except Exception as e:
+        print(f"PDF generation error: {e}")
+        return jsonify({"error": "Failed to generate PDF: " + str(e)}), 500
+    
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=offers_{category_offer_id}.pdf'
+    return response
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

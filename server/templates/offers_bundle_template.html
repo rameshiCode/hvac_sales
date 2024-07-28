@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ofertă Bundle</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #2a41e8;
+            text-align: center;
+            border-bottom: 2px solid #2a41e8;
+            padding-bottom: 10px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        .intro-text {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .intro-text img {
+            max-width: 150px;
+            border-radius: 50%;
+            margin-top: 10px;
+        }
+        .offers-grid {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .offer-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .offer-header {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+        .price-details {
+            text-align: center;
+            margin: 10px 0;
+        }
+        .product-list {
+            background-color: #f1f1f1;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: left;
+        }
+        .product-item {
+            margin: 5px 0;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+        .highlight {
+            color: #e85c41;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <h1>Ofertă pentru {{ client.name }}</h1>
+        <div class="intro-text">
+            <p>Bună, sunt Mihaela, bine ai venit!</p>
+            <img src="{{ url_for('static', filename='assets/ancabg.png') }}" alt="Mihaela">
+            <p>Ai ajuns unde trebuie. Am preluat informațiile tale, eu mă voi ocupa de tine în relația cu e-caldura.</p>
+            <p>Pentru oferta ta care conține {{ category_offer.category_name }}:</p>
+        </div>
+        <h2>Category: {{ category_offer.category_name }}</h2>
+        <div class="offers-grid">
+            {% for offer in offers %}
+            <div class="offer-container">
+                <div class="offer-header">{{ offer.offer_type }} Plan</div>
+                <div class="product-list">
+                    {% for product in json.loads(offer.products_details) %}
+                    <div class="product-item">
+                        <strong>{{ product['name'] }}</strong> - {{ product['quantity'] }} - {{ '{:0.2f}'.format(product['pretTotal'] | float) }} lei
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="price-details">
+                    <div>Total Price: <span class="highlight">{{ '{:0.2f}'.format(offer.total_price | float) }} lei</span></div>
+                    <div>Discounted Price: <span class="highlight">{{ '{:0.2f}'.format(offer.final_price | float) }} lei</span></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="footer">
+            Vă mulțumim că ne-ați ales!
+        </div>
+    </div>
+</body>
+</html>
