@@ -18,7 +18,7 @@ from flask import (
 from flask_cors import CORS
 from flask_mail import Mail, Message
 
-from models.models import Client, Offer, Product, db
+from models.models import Client, Offer, Product, CategoryOffer, db
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
@@ -101,10 +101,10 @@ def update_client(id):
 @app.route('/clients/<int:id>', methods=['DELETE'])
 def delete_client(id):
     client = Client.query.get_or_404(id)
-    Offer.query.filter_by(client_id=id).delete()
     db.session.delete(client)
     db.session.commit()
-    return jsonify({'message': 'Client deleted'}), 204
+    return jsonify({'message': 'Client and related data deleted'}), 204
+
 
 @app.route('/import', methods=['POST'])
 def import_products():
@@ -314,6 +314,12 @@ def get_client_offers(client_id):
     offers = Offer.query.filter_by(client_id=client_id).all()
     return jsonify([offer.to_dict() for offer in offers]), 200 
 
+@app.route('/clients/<int:client_id>/category-offers', methods=['GET'])
+def get_client_category_offers(client_id):
+    client = Client.query.get_or_404(client_id)
+    category_offers = CategoryOffer.query.filter_by(client_id=client.id).all()
+    return jsonify([category_offer.to_dict() for category_offer in category_offers]), 200
+
 @app.route('/offers/<int:offer_id>', methods=['GET'])
 def get_offer(offer_id):
     offer = Offer.query.get(offer_id)
@@ -339,20 +345,16 @@ def get_offer(offer_id):
 
     return jsonify(offer_details), 200
 
-
 @app.route('/clients/<int:client_id>', methods=['GET'])
 def get_client(client_id):
-    client = Client.query.get(client_id)
-    if client:
-        return jsonify({
-            'id': client.id,
-            'name': client.name,
-            'email': client.email,
-            'phone': client.phone,
-            'address': client.address
-        }), 200
-    else:
-        return jsonify({'error': 'Client not found'}), 404
+    client = Client.query.get_or_404(client_id)
+    return jsonify({
+        'id': client.id,
+        'name': client.name,
+        'email': client.email,
+        'phone': client.phone,
+        'address': client.address
+    }), 200
 
 @app.route('/offers/<int:offer_id>/download', methods=['GET'])
 def download_offer(offer_id):
@@ -380,13 +382,21 @@ def create_offer():
     data = request.get_json()
     print("Received offer data:", data)
     
+    # Fetch or create the CategoryOffer object
+    category_offer = CategoryOffer.query.filter_by(client_id=data['clientId'], category_name=data['categoryName']).first()
+    if not category_offer:
+        category_offer = CategoryOffer(client_id=data['clientId'], category_name=data['categoryName'])
+        db.session.add(category_offer)
+        db.session.commit()
+
     try:
         new_offer = Offer(
             client_id=data['clientId'],
-            offer_type=data['offerType'],  # Add this line
+            offer_type=data['offerType'], 
             products_details=json.dumps(data['products']),
             total_price=data['totalPrice'],
-            final_price=data['finalPrice']
+            final_price=data['finalPrice'],
+            category_offer_id=category_offer.id  # Link to the CategoryOffer
         )
         db.session.add(new_offer)
         db.session.commit()
@@ -402,17 +412,22 @@ def create_offer():
 @app.route('/offers/<int:offer_id>', methods=['PUT'])
 def update_offer(offer_id):
     data = request.get_json()
-    print("Received update data:", data)
-
     offer = Offer.query.get_or_404(offer_id)
+    
+    # Fetch or create the CategoryOffer object
+    category_offer = CategoryOffer.query.filter_by(client_id=data['clientId'], category_name=data['categoryName']).first()
+    if not category_offer:
+        category_offer = CategoryOffer(client_id=data['clientId'], category_name=data['categoryName'])
+        db.session.add(category_offer)
+        db.session.commit()
 
     try:
         offer.offer_type = data['offerType']
         offer.products_details = json.dumps(data['products'])
         offer.total_price = data['totalPrice']
         offer.final_price = data['finalPrice']
+        offer.category_offer_id = category_offer.id  # Link to the CategoryOffer
         db.session.commit()
-        print("Offer updated successfully:", offer)
         return jsonify(offer.to_dict()), 200
     except KeyError as e:
         print(f"Missing key: {str(e)}")
@@ -421,6 +436,41 @@ def update_offer(offer_id):
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+# handle offer list for big offer to small offer
+
+@app.route('/category-offers/<int:category_offer_id>/offers', methods=['GET'])
+def get_category_offers(category_offer_id):
+    category_offer = CategoryOffer.query.get_or_404(category_offer_id)
+    offers = Offer.query.filter_by(category_offer_id=category_offer.id).all()
+    return jsonify([offer.to_dict() for offer in offers]), 200
+    
+@app.route('/category-offers', methods=['POST'])
+def create_category_offer():
+    data = request.get_json()
+    final_price = data.get('finalPrice', 0)  # Provide a default value if finalPrice is not provided
+
+    new_category_offer = CategoryOffer(
+        client_id=data['clientId'],
+        category_name=data['categoryName'],
+        final_price=final_price  # Set the final price
+    )
+    db.session.add(new_category_offer)
+    db.session.commit()
+    
+    for offer_data in data['offers']:
+        new_offer = Offer(
+            client_id=new_category_offer.client_id,
+            offer_type=offer_data['offerType'],
+            products_details=json.dumps(offer_data['products']),
+            total_price=offer_data['totalPrice'],
+            final_price=offer_data['finalPrice'],
+            category_offer_id=new_category_offer.id  # Add this line to link offers
+        )
+        db.session.add(new_offer)
+    db.session.commit()
+    
+    return jsonify(new_category_offer.to_dict()), 201
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

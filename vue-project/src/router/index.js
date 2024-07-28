@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../components/Home.vue';
 import PingView from '../views/PingView.vue';
 import SignUp from '@/components/SignUp.vue';
@@ -73,6 +73,6 @@ const router = createRouter({
       props: true,
     }
   ]
-})
+});
 
 export default router;

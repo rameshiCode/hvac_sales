@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-toolbar color="deep-purple accent-3" dark fixed app>
+      <!-- Toolbar Content -->
       <v-spacer></v-spacer>
       <v-col sm="12" md="6" lg="auto">
         <v-select
@@ -9,7 +10,6 @@
           label="Offer Type"
           hide-details
           dense
-          readonly
         ></v-select>
       </v-col>
       <v-col sm="12" md="6" lg="auto">
@@ -198,7 +198,8 @@ export default {
       ],
       mainProducts: [],
       complementaryProducts: [],
-      isEditing: !!this.offerId,
+      categoryOfferId: null,  // Store the category offer ID if editing
+      isEditing: !!this.offerId,  // Flag to check if editing an existing offer
     };
   },
   created() {
@@ -206,7 +207,7 @@ export default {
     console.log('Received Client Email:', this.clientEmail);
     console.log('Received Category Name:', this.categoryName);
     console.log('Received Offer ID:', this.offerId);
-    console.log('Received Offer Type:', this.offerType);
+    console.log('Received Offer Type:', this.offerType);  // Log the received offer type
     if (this.offerId) {
       this.loadExistingOffer(this.offerId);
     } else {
@@ -215,6 +216,7 @@ export default {
   },
   methods: {
     loadProducts() {
+      console.log('Loading products for category:', this.categoryName);
       axios.get(`${this.$apiUrl}/products`, {
         params: {
           category: this.categoryName
@@ -236,12 +238,14 @@ export default {
       });
     },
     loadExistingOffer(offerId) {
+      console.log('Loading existing offer with ID:', offerId);
       axios.get(`${this.$apiUrl}/offers/${offerId}`, {
         params: { category: this.categoryName }
       }).then(response => {
         const offerDetails = response.data;
-        console.log('Offer Details:', offerDetails);
+        console.log('Offer Details:', offerDetails);  // Log the offer details
 
+        // Ensure products_details is an array
         let productsDetails = [];
         try {
           productsDetails = Array.isArray(offerDetails.products_details) ? offerDetails.products_details : JSON.parse(offerDetails.products_details);
@@ -276,6 +280,7 @@ export default {
           subcategory: item.subcategory
         }));
 
+        // Merge storedProducts and categoryProducts
         const productMap = new Map();
         storedProducts.forEach(product => productMap.set(product.id, product));
         categoryProducts.forEach(product => {
@@ -286,8 +291,9 @@ export default {
 
         this.products = Array.from(productMap.values());
         this.overallDiscount = offerDetails.overallDiscount || 0;
-        this.selectedOfferType = offerDetails.offer_type || 'standard';
-        console.log('Updated Offer Type:', this.selectedOfferType);
+        this.selectedOfferType = offerDetails.offer_type || 'standard';  // Update the selected offer type
+        this.categoryOfferId = offerDetails.category_offer_id;  // Store the category offer ID
+        console.log('Updated Offer Type:', this.selectedOfferType);  // Log the updated offer type
         this.categorizeProducts();
         this.updateTotalPrice();
       }).catch(error => {
@@ -362,6 +368,11 @@ export default {
       });
     },
     continueOffer() {
+      console.log('Continuing offer with data:', {
+        clientId: this.clientId,
+        offerType: this.selectedOfferType,
+        categoryName: this.categoryName
+      });
       const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
       const method = this.isEditing ? 'put' : 'post';
       const offerData = {
@@ -369,7 +380,9 @@ export default {
         offerType: this.selectedOfferType,
         products: this.products.filter(p => p.quantity > 0),
         totalPrice: this.totalPrice,
-        finalPrice: this.totalPrice
+        finalPrice: this.totalPrice,
+        categoryOfferId: this.categoryOfferId,  // Include the category offer ID if editing
+        categoryName: this.categoryName  // Include the category name
       };
       axios({ method, url, data: offerData })
         .then(response => {
@@ -377,7 +390,6 @@ export default {
           const nextOfferType = this.getNextOfferType(this.selectedOfferType);
           if (!this.isEditing && nextOfferType) {
             this.selectedOfferType = nextOfferType;
-            this.products = []; // Clear the products before loading new ones
             this.loadProducts();
           } else {
             this.$router.push({ 
@@ -400,6 +412,11 @@ export default {
       return null;
     },
     finishOffer() {
+      console.log('Finishing offer with data:', {
+        clientId: this.clientId,
+        offerType: this.selectedOfferType,
+        categoryName: this.categoryName
+      });
       const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
       const method = this.isEditing ? 'put' : 'post';
       const offerData = {
@@ -407,12 +424,15 @@ export default {
         offerType: this.selectedOfferType,
         products: this.products.filter(p => p.quantity > 0),
         totalPrice: this.totalPrice,
-        finalPrice: this.totalPrice
+        finalPrice: this.totalPrice,
+        categoryOfferId: this.categoryOfferId,  // Include the category offer ID if editing
+        categoryName: this.categoryName  // Include the category name
       };
 
       axios({ method, url, data: offerData })
         .then(response => {
           alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
+          // No redirection needed here, simply stay on the same page
         })
         .catch(error => {
           console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
@@ -424,8 +444,11 @@ export default {
 </script>
 
 <style>
-.v-text-field--outlined {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+.custom-label {
+  display: flex;
+  align-items: center;
+}
+.label-icon {
+  margin-left: 5px;
 }
 </style>
