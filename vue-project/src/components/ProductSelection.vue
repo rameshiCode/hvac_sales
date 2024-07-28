@@ -70,6 +70,9 @@
       <div style="display: flex; align-items: center;">
         <v-btn color="secondary" @click="sendOffer">Send Offer</v-btn>
       </div>
+      <div style="display: flex; align-items: center;">
+        <v-btn color="blue" @click="finishOffer">Finish</v-btn>
+      </div>
     </v-toolbar>
 
     <!-- Main Products -->
@@ -196,6 +199,7 @@ export default {
       ],
       mainProducts: [],
       complementaryProducts: [],
+      isEditing: !!this.offerId,  // Flag to check if editing an existing offer
     };
   },
   created() {
@@ -361,7 +365,8 @@ export default {
       });
     },
     continueOffer() {
-      const url = `${this.$apiUrl}/offers`;
+      const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
+      const method = this.isEditing ? 'put' : 'post';
       const offerData = {
         clientId: this.clientId,
         offerType: this.selectedOfferType,
@@ -369,12 +374,11 @@ export default {
         totalPrice: this.totalPrice,
         finalPrice: this.totalPrice
       };
-
-      axios.post(url, offerData)
+      axios({ method, url, data: offerData })
         .then(response => {
-          alert(`${this.selectedOfferType} offer saved successfully!`);
+          alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
           const nextOfferType = this.getNextOfferType(this.selectedOfferType);
-          if (nextOfferType) {
+          if (!this.isEditing && nextOfferType) {
             this.selectedOfferType = nextOfferType;
             this.loadProducts();
           } else {
@@ -386,8 +390,8 @@ export default {
           }
         })
         .catch(error => {
-          console.error(`Error saving the ${this.selectedOfferType} offer:`, error);
-          alert(`There was an error saving the ${this.selectedOfferType} offer. Please try again.`);
+          console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
+          alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
         });
     },
     getNextOfferType(currentOfferType) {
@@ -396,7 +400,28 @@ export default {
         return this.offerTypes[currentIndex + 1];
       }
       return null;
-    }
+    },
+    finishOffer() {
+      const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
+      const method = this.isEditing ? 'put' : 'post';
+      const offerData = {
+        clientId: this.clientId,
+        offerType: this.selectedOfferType,
+        products: this.products.filter(p => p.quantity > 0),
+        totalPrice: this.totalPrice,
+        finalPrice: this.totalPrice
+      };
+
+      axios({ method, url, data: offerData })
+        .then(response => {
+          alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
+          // No redirection needed here, simply stay on the same page
+        })
+        .catch(error => {
+          console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
+          alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
+        });
+    },
   }
 };
 </script>

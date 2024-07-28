@@ -399,6 +399,27 @@ def create_offer():
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/offers/<int:offer_id>', methods=['PUT'])
+def update_offer(offer_id):
+    data = request.get_json()
+    print("Received update data:", data)
+
+    offer = Offer.query.get_or_404(offer_id)
+
+    try:
+        offer.offer_type = data['offerType']
+        offer.products_details = json.dumps(data['products'])
+        offer.total_price = data['totalPrice']
+        offer.final_price = data['finalPrice']
+        db.session.commit()
+        print("Offer updated successfully:", offer)
+        return jsonify(offer.to_dict()), 200
+    except KeyError as e:
+        print(f"Missing key: {str(e)}")
+        return jsonify({'error': f'Missing key: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

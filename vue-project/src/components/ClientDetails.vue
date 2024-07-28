@@ -68,17 +68,12 @@ export default {
     fetchOffers() {
       axios.get(`${this.$apiUrl}/clients/${this.clientId}/offers`)
         .then(response => {
-          // Ensure the response data is an array of offers
           if (Array.isArray(response.data)) {
             console.log('Offers:', response.data);
             this.offers = response.data.map(offer => {
-              // Log the offer type
               console.log('Offer Type:', offer.offer_type);
-
-              // Ensure products_details is a JSON string that needs to be parsed
               try {
                 offer.products_details = JSON.parse(offer.products_details);
-                // Extract category from products_details if available
                 offer.category = offer.products_details.length > 0 ? offer.products_details[0].category : 'N/A';
               } catch (e) {
                 console.error('Error parsing products_details:', e);

@@ -61,10 +61,10 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/product-selection/:clientId/:categoryName/:clientEmail?/:offerId?',
+      path: '/product-selection/:clientId/:categoryName/:clientEmail?/:offerId?/:offerType?',
       name: 'ProductSelection',
       component: ProductSelection,
-      props: true
+      props: true,
     },
     {
       path: '/clients/:clientId',
