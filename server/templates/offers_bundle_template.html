@@ -38,7 +38,7 @@
         }
         .intro-text img {
             max-width: 150px;
-            border-radius: 50%;
+            border-radius: 10%;
             margin-top: 10px;
         }
         .offers-grid {
@@ -89,16 +89,15 @@
     <div class="email-container">
         <h1>Ofertă pentru {{ client.name }}</h1>
         <div class="intro-text">
-            <p>Bună, sunt Mihaela, bine ai venit!</p>
-            <img src="{{ url_for('static', filename='assets/ancabg.png') }}" alt="Mihaela">
-            <p>Ai ajuns unde trebuie. Am preluat informațiile tale, eu mă voi ocupa de tine în relația cu e-caldura.</p>
+            <h2>Bună, sunt Anca, bine ai venit!</h2>
+            <img src="data:image/png;base64,{{ image_base64 }}" alt="Mihaela">
+            <p>Ai ajuns unde trebuie. Am preluat informațiile tale, eu mă voi ocupa de tine în relația cu E-caldura.</p>
             <p>Pentru oferta ta care conține {{ category_offer.category_name }}:</p>
         </div>
-        <h2>Category: {{ category_offer.category_name }}</h2>
         <div class="offers-grid">
             {% for offer in offers %}
             <div class="offer-container">
-                <div class="offer-header">{{ offer.offer_type }} Plan</div>
+                <div class="offer-header">{{ offer.offer_type }}</div>
                 <div class="product-list">
                     {% for product in json.loads(offer.products_details) %}
                     <div class="product-item">

@@ -3,7 +3,9 @@ import json
 import os
 from pathlib import Path
 import pdfkit
+import base64
 
+from flask import current_app, send_file
 import pandas as pd
 from dotenv import load_dotenv
 from flask import (
@@ -243,8 +245,16 @@ def generate_offer():
         # Get action type, default is 'download'
         action = request.args.get('action', 'download')
         data = request.get_json()
-        client_id = data['clientId']
+        client_id = data.get('clientId')
         recipient_email = data.get('clientEmail')  # Only used if action is 'email'
+
+        print(f"Received data: {data}")
+        print(f"Action: {action}")
+        print(f"Client ID: {client_id}")
+        print(f"Recipient Email: {recipient_email}")
+
+        if action == 'email' and not recipient_email:
+            return jsonify({"error": "Recipient email is required for sending"}), 400
 
         # Handle empty or invalid overallDiscount
         overall_discount = data.get('overallDiscount', '')
@@ -290,8 +300,6 @@ def generate_offer():
             return jsonify({"error": "Failed to generate PDF: " + str(e)}), 500
 
         if action == 'email':
-            if not recipient_email:
-                return jsonify({"error": "Recipient email is required for sending"}), 400
             subject = f"Offer for {client.name}"
             recipients = [recipient_email]
             message = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=recipients, body="Please find attached the offer.")
@@ -310,6 +318,7 @@ def generate_offer():
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
+
 
 @app.route('/clients/<int:client_id>/offers', methods=['GET'])
 def get_client_offers(client_id):
@@ -478,32 +487,122 @@ def create_category_offer():
     
     return jsonify(new_category_offer.to_dict()), 201
 
+
 @app.route('/category-offers/<int:category_offer_id>/offers/pdf', methods=['GET'])
 def download_offers_pdf(category_offer_id):
-    category_offer = CategoryOffer.query.get_or_404(category_offer_id)
-    offers = Offer.query.filter_by(category_offer_id=category_offer_id).all()
-    client = Client.query.get_or_404(category_offer.client_id)
-    
-    # Pass the json module to the template context
-    rendered = render_template(
-        'offers_bundle_template.html',
-        client=client,
-        category_offer=category_offer,
-        offers=offers,
-        json=json
-    )
-    
     try:
-        pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config)
-    except Exception as e:
-        print(f"PDF generation error: {e}")
-        return jsonify({"error": "Failed to generate PDF: " + str(e)}), 500
-    
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=offers_{category_offer_id}.pdf'
-    return response
+        category_offer = CategoryOffer.query.get_or_404(category_offer_id)
+        offers = Offer.query.filter_by(category_offer_id=category_offer_id).all()
+        client = Client.query.get_or_404(category_offer.client_id)
 
+        # Absolute path to the static image
+        image_path = os.path.abspath(os.path.join(current_app.root_path, 'static', 'assets', 'ancabg.png'))
+
+        # Read the image and encode it to Base64
+        with open(image_path, 'rb') as image_file:
+            image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+
+        # Debugging information
+        print(f"Client: {client}")
+        print(f"Category Offer: {category_offer}")
+        print(f"Offers: {offers}")
+        print(f"Image Path: {image_path}")
+
+        rendered = render_template(
+            'offers_bundle_template.html',
+            client=client,
+            category_offer=category_offer,
+            offers=offers,
+            image_base64=image_base64,
+            json=json
+        )
+
+        # Debugging information
+        print(f"Rendered HTML: {rendered}")
+
+        try:
+            pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config)
+        except Exception as e:
+            print(f"PDF generation error: {e}")
+            return jsonify({"error": "Failed to generate PDF: " + str(e)}), 500
+
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=offers_{category_offer_id}.pdf'
+        return response
+    except Exception as e:
+        print(f"General error: {e}")
+        return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
+
+
+
+@app.route('/category-offers/<int:category_offer_id>/offers/send-pdf', methods=['POST'])
+def send_offers_pdf(category_offer_id):
+    try:
+        category_offer = CategoryOffer.query.get_or_404(category_offer_id)
+        offers = Offer.query.filter_by(category_offer_id=category_offer_id).all()
+        client = Client.query.get_or_404(category_offer.client_id)
+
+        # Absolute path to the static image
+        image_path = os.path.abspath(os.path.join(current_app.root_path, 'static', 'assets', 'ancabg.png'))
+        
+        # Read the image and encode it to Base64
+        with open(image_path, 'rb') as image_file:
+            image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Render the HTML template with data
+        rendered = render_template(
+            'offers_bundle_template.html',
+            client=client,
+            category_offer=category_offer,
+            offers=offers,
+            image_base64=image_base64,
+            json=json
+        )
+        
+        # Convert HTML to PDF
+        try:
+            pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config)
+        except Exception as e:
+            print(f"PDF generation error: {e}")
+            return jsonify({"error": "Failed to generate PDF: " + str(e)}), 500
+        
+        # Send the PDF via email
+        recipient_email = client.email
+        if not recipient_email:
+            return jsonify({"error": "Recipient email is required for sending"}), 400
+        subject = f"Ofertă pentru {client.name}"
+        recipients = [recipient_email]
+        message = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=recipients, body="Vă rugăm să găsiți atașată oferta dumneavoastră.")
+        message.attach("offer.pdf", "application/pdf", pdf)
+        
+        print(f"Sending email to: {recipient_email}")
+        print(f"Email subject: {subject}")
+        print(f"Email sender: {app.config['MAIL_USERNAME']}")
+        
+        try:
+            with app.app_context():
+                mail.send(message)
+            return jsonify({"message": "PDF sent successfully!"}), 200
+        except Exception as e:
+            print(f"Email sending error: {e}")
+            return jsonify({"error": "Failed to send email: " + str(e)}), 500
+    except Exception as e:
+        print(f"General error: {e}")
+        return jsonify({"error": "An unexpected error occurred: " + str(e)}), 500
+
+
+import socket
+def check_smtp_connection():
+    try:
+        smtp_host = 'smtp.gmail.com'
+        smtp_port = 587
+        socket.create_connection((smtp_host, smtp_port), timeout=10)
+        print("SMTP server is reachable.")
+    except Exception as e:
+        print(f"Failed to reach SMTP server: {e}")
+
+check_smtp_connection()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

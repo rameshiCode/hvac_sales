@@ -176,6 +176,7 @@
 </template>
 
 <script>
+
 import axios from 'axios';
 
 export default {
@@ -198,7 +199,6 @@ export default {
       ],
       mainProducts: [],
       complementaryProducts: [],
-      categoryOfferId: null,  // Store the category offer ID if editing
       isEditing: !!this.offerId,  // Flag to check if editing an existing offer
     };
   },
@@ -209,8 +209,8 @@ export default {
     console.log('Received Offer ID:', this.offerId);
     console.log('Received Offer Type:', this.offerType);
     console.log('Received Category Offer ID:', this.categoryOfferId); 
-      if (this.offerId) {
-        this.loadExistingOffer(this.offerId);
+    if (this.offerId) {
+      this.loadExistingOffer(this.offerId);
     } else {
       this.loadProducts();
     }
@@ -293,8 +293,6 @@ export default {
         this.products = Array.from(productMap.values());
         this.overallDiscount = offerDetails.overallDiscount || 0;
         this.selectedOfferType = offerDetails.offer_type || 'standard';  // Update the selected offer type
-        this.categoryOfferId = offerDetails.category_offer_id;  // Store the category offer ID
-        console.log('Updated Offer Type:', this.selectedOfferType);  // Log the updated offer type
         this.categorizeProducts();
         this.updateTotalPrice();
       }).catch(error => {
@@ -336,15 +334,15 @@ export default {
       const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
 
       axios.post(url, {
-          clientId: this.clientId,
-          clientEmail: this.clientEmail,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0)
+        clientId: this.clientId,
+        clientEmail: this.clientEmail,  // Use prop here
+        overallDiscount: overallDiscountValue,
+        products: this.products.filter(p => p.quantity > 0)
       }).then(() => {
-          alert('Offer sent successfully!');
+        alert('Offer sent successfully!');
       }).catch(error => {
-          console.error('Error sending offer:', error);
-          alert('There was an error sending the offer. Please try again.');
+        console.error('Error sending offer:', error);
+        alert('There was an error sending the offer. Please try again.');
       });
     },
     downloadPDF() {
@@ -352,55 +350,56 @@ export default {
       const overallDiscountValue = parseFloat(this.overallDiscount) || 0;
 
       axios.post(url, {
-          clientId: this.clientId,
-          overallDiscount: overallDiscountValue,
-          products: this.products.filter(p => p.quantity > 0)
+        clientId: this.clientId,
+        overallDiscount: overallDiscountValue,
+        products: this.products.filter(p => p.quantity > 0)
       }, {
         responseType: 'blob'
       }).then(response => {
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = 'offer.pdf';
-          link.click();
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'offer.pdf';
+        link.click();
       }).catch(error => {
-          console.error('Error downloading PDF:', error);
-          alert('There was an error downloading the PDF. Please try again.');
+        console.error('Error downloading PDF:', error);
+        alert('There was an error downloading the PDF. Please try again.');
       });
     },
     continueOffer() {
-      const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
-      const method = this.isEditing ? 'put' : 'post';
-      const offerData = {
-        clientId: this.clientId,
-        offerType: this.selectedOfferType,
-        products: this.products.filter(p => p.quantity > 0),
-        totalPrice: this.totalPrice,
-        finalPrice: this.totalPrice,
-        categoryOfferId: this.categoryOfferId,  // Include the category offer ID
-        categoryName: this.categoryName  // Include category name
-      };
-      console.log('Continuing offer with data:', offerData); // Log the offer data for debugging
-      axios({ method, url, data: offerData })
-        .then(response => {
-          alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
-          const nextOfferType = this.getNextOfferType(this.selectedOfferType);
-          if (!this.isEditing && nextOfferType) {
-            this.selectedOfferType = nextOfferType;
-            this.loadProducts();
-          } else {
-            this.$router.push({ 
-              name: 'ClientDetails', 
-              params: { clientId: this.clientId },
-              query: { totalPrice: this.totalPrice }
-            });
-          }
-        })
-        .catch(error => {
-          console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
-          alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
+  const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
+  const method = this.isEditing ? 'put' : 'post';
+  const offerData = {
+    clientId: this.clientId,
+    offerType: this.selectedOfferType,
+    products: this.products.filter(p => p.quantity > 0),
+    totalPrice: this.totalPrice,
+    finalPrice: this.totalPrice,
+    categoryOfferId: this.categoryOfferId,  // Include the category offer ID
+    categoryName: this.categoryName,  // Include category name
+    clientEmail: this.clientEmail  // Include client email
+  };
+  console.log('Continuing offer with data:', offerData); // Log the offer data for debugging
+  axios({ method, url, data: offerData })
+    .then(response => {
+      alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
+      const nextOfferType = this.getNextOfferType(this.selectedOfferType);
+      if (!this.isEditing && nextOfferType) {
+        this.selectedOfferType = nextOfferType;
+        this.loadProducts();
+      } else {
+        this.$router.push({ 
+          name: 'ClientDetails', 
+          params: { clientId: this.clientId },
+          query: { totalPrice: this.totalPrice }
         });
-    },
+      }
+    })
+    .catch(error => {
+      console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
+      alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
+    });
+},
     getNextOfferType(currentOfferType) {
       const currentIndex = this.offerTypes.indexOf(currentOfferType);
       if (currentIndex >= 0 && currentIndex < this.offerTypes.length - 1) {
@@ -449,3 +448,4 @@ export default {
   margin-left: 5px;
 }
 </style>
+

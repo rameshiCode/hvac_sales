@@ -9,10 +9,10 @@
     >
       <template v-slot:item.actions="{ item }">
         <v-btn color="primary" @click="viewOffers(item)">View Offers</v-btn>
-        <v-btn color="secondary" @click="downloadPdf(item)">Download PDF</v-btn>
+        <v-btn color="primary" @click="downloadPdf(item)">Download PDF</v-btn>
+        <v-btn color="primary" @click="sendPdf(item)">Send PDF</v-btn>
       </template>
     </v-data-table>
-
     <h2>Offers for Selected Category</h2>
     <v-data-table
       :headers="offerHeaders"
@@ -37,7 +37,6 @@ export default {
       categoryOffers: [],
       offers: [],
       selectedCategoryOfferId: null,
-      selectedCategoryName: '', // Added to store the selected category name
       categoryHeaders: [
         { text: 'Category Name', value: 'category_name' },
         { text: 'Final Price', value: 'final_price' },
@@ -45,7 +44,7 @@ export default {
         { text: 'Actions', value: 'actions', sortable: false }
       ],
       offerHeaders: [
-        { text: 'Offer Type', value: 'offer_type' },  // Display offer type
+        { text: 'Offer Type', value: 'offer_type' },
         { text: 'Total Price', value: 'total_price' },
         { text: 'Final Price', value: 'final_price' },
         { text: 'Created At', value: 'created_at' },
@@ -81,12 +80,12 @@ export default {
     viewOffers(categoryOffer) {
       console.log('Viewing offers for category offer:', categoryOffer);
       this.selectedCategoryOfferId = categoryOffer.id;
-      this.selectedCategoryName = categoryOffer.category_name; // Set the category name here
+      this.selectedCategoryName = categoryOffer.category_name;
       axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers`)
         .then(response => {
           this.offers = response.data.map(offer => ({
             ...offer,
-            category_name: this.selectedCategoryName // Ensure the category name is included in each offer
+            category_name: this.selectedCategoryName
           }));
           console.log('Fetched offers for category:', this.offers);
         })
@@ -104,25 +103,36 @@ export default {
         name: 'ProductSelection',
         params: {
           clientId: offer.client_id,
+          clientEmail: offer.client_email,
           categoryName: offer.category_name,
           offerId: offer.id,
           offerType: offer.offer_type
         }
       });
     },
-    downloadPdf(categoryOffer) {
-      console.log('Downloading PDF for category offer:', categoryOffer);
-      axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers/pdf`, { responseType: 'blob' })
-        .then(response => {
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = `offers_${categoryOffer.id}.pdf`;
-          link.click();
-        })
-        .catch(error => {
-          console.error('Error downloading PDF:', error);
-        });
+    async downloadPdf(categoryOffer) {
+      try {
+        console.log("Downloading PDF for category offer:", categoryOffer);
+        const response = await axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers/pdf`, { responseType: 'blob' });
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `offers_${categoryOffer.id}.pdf`;
+        link.click();
+      } catch (error) {
+        console.error('Error downloading PDF:', error);
+        alert('There was an error downloading the PDF. Please try again.');
+      }
+    },
+    async sendPdf(categoryOffer) {
+      try {
+        console.log("Sending PDF for category offer:", categoryOffer);
+        const response = await axios.post(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers/send-pdf`);
+        alert('PDF sent successfully!');
+      } catch (error) {
+        console.error('Error sending PDF:', error);
+        alert('There was an error sending the PDF. Please try again.');
+      }
     }
   }
 };
