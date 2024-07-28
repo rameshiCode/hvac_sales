@@ -179,7 +179,7 @@
 import axios from 'axios';
 
 export default {
-  props: ['clientId', 'categoryName', 'clientEmail', 'offerId', 'offerType'],
+  props: ['clientId', 'categoryName', 'clientEmail', 'offerId', 'offerType', 'categoryOfferId'],
   data() {
     return {
       products: [],
@@ -207,9 +207,10 @@ export default {
     console.log('Received Client Email:', this.clientEmail);
     console.log('Received Category Name:', this.categoryName);
     console.log('Received Offer ID:', this.offerId);
-    console.log('Received Offer Type:', this.offerType);  // Log the received offer type
-    if (this.offerId) {
-      this.loadExistingOffer(this.offerId);
+    console.log('Received Offer Type:', this.offerType);
+    console.log('Received Category Offer ID:', this.categoryOfferId); 
+      if (this.offerId) {
+        this.loadExistingOffer(this.offerId);
     } else {
       this.loadProducts();
     }
@@ -368,11 +369,6 @@ export default {
       });
     },
     continueOffer() {
-      console.log('Continuing offer with data:', {
-        clientId: this.clientId,
-        offerType: this.selectedOfferType,
-        categoryName: this.categoryName
-      });
       const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
       const method = this.isEditing ? 'put' : 'post';
       const offerData = {
@@ -381,9 +377,10 @@ export default {
         products: this.products.filter(p => p.quantity > 0),
         totalPrice: this.totalPrice,
         finalPrice: this.totalPrice,
-        categoryOfferId: this.categoryOfferId,  // Include the category offer ID if editing
-        categoryName: this.categoryName  // Include the category name
+        categoryOfferId: this.categoryOfferId,  // Include the category offer ID
+        categoryName: this.categoryName  // Include category name
       };
+      console.log('Continuing offer with data:', offerData); // Log the offer data for debugging
       axios({ method, url, data: offerData })
         .then(response => {
           alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);

@@ -39,17 +39,17 @@ export default {
       showOffers: false,
       selectedCategory: null,  // Add selectedCategory to track the selected category
       categoryHeaders: [  // Ensure this is defined
-        { text: 'Category Name', value: 'category_name' },
-        { text: 'Final Price', value: 'final_price' },
-        { text: 'Created At', value: 'created_at' },
-        { text: 'Actions', value: 'actions', sortable: false }
+        { title: 'Category Name', value: 'category_name' },
+        { title: 'Final Price', value: 'final_price' },
+        { title: 'Created At', value: 'created_at' },
+        { title: 'Actions', value: 'actions', sortable: false }
       ],
       offerHeaders: [  // Headers for displaying offers
-        { text: 'Offer Type', value: 'offer_type' },
-        { text: 'Total Price', value: 'total_price' },
-        { text: 'Final Price', value: 'final_price' },
-        { text: 'Created At', value: 'created_at' },
-        { text: 'Actions', value: 'actions', sortable: false }
+        { title: 'Offer Type', value: 'offer_type' },
+        { title: 'Total Price', value: 'total_price' },
+        { title: 'Final Price', value: 'final_price' },
+        { title: 'Created At', value: 'created_at' },
+        { title: 'Actions', value: 'actions', sortable: false }
       ]
     };
   },

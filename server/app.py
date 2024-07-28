@@ -385,7 +385,7 @@ def create_offer():
     # Fetch or create the CategoryOffer object
     category_offer = CategoryOffer.query.filter_by(client_id=data['clientId'], category_name=data['categoryName']).first()
     if not category_offer:
-        category_offer = CategoryOffer(client_id=data['clientId'], category_name=data['categoryName'])
+        category_offer = CategoryOffer(client_id=data['clientId'], category_name=data['categoryName'], final_price=0)
         db.session.add(category_offer)
         db.session.commit()
 
@@ -408,6 +408,8 @@ def create_offer():
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
 
 @app.route('/offers/<int:offer_id>', methods=['PUT'])
 def update_offer(offer_id):
@@ -444,7 +446,7 @@ def get_category_offers(category_offer_id):
     category_offer = CategoryOffer.query.get_or_404(category_offer_id)
     offers = Offer.query.filter_by(category_offer_id=category_offer.id).all()
     return jsonify([offer.to_dict() for offer in offers]), 200
-    
+
 @app.route('/category-offers', methods=['POST'])
 def create_category_offer():
     data = request.get_json()
