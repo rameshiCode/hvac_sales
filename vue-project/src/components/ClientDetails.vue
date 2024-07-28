@@ -77,29 +77,40 @@ export default {
         });
     },
     viewOffers(categoryOffer) {
-      console.log('Viewing offers for category offer:', categoryOffer);
-      this.selectedCategoryOfferId = categoryOffer.id;
-      axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers`)
+    console.log('Viewing offers for category offer:', categoryOffer);
+    this.selectedCategoryOfferId = categoryOffer.id;
+    this.selectedCategoryName = categoryOffer.category_name; // Set the category name here
+    axios.get(`${this.$apiUrl}/category-offers/${categoryOffer.id}/offers`)
         .then(response => {
-          this.offers = response.data;
-          console.log('Fetched offers for category:', this.offers);
+            this.offers = response.data.map(offer => ({
+                ...offer,
+                category_name: this.selectedCategoryName // Ensure the category name is included in each offer
+            }));
+            console.log('Fetched offers for category:', this.offers);
         })
         .catch(error => {
-          console.error('Error fetching offers:', error);
+            console.error('Error fetching offers:', error);
         });
-    },
-    goToEditOffer(offer) {
-      console.log('Navigating to edit offer with details:', offer);
-      this.$router.push({
+},
+goToEditOffer(offer) {
+    if (!offer.category_name) {
+        console.error('Category name is missing from the offer:', offer);
+        return;
+    }
+    console.log('Navigating to edit offer with details:', offer);
+    this.$router.push({
         name: 'ProductSelection',
         params: {
-          clientId: offer.client_id,
-          categoryName: offer.category_name,
-          offerId: offer.id,
-          offerType: offer.offer_type
+            clientId: offer.client_id,
+            categoryName: offer.category_name,
+            offerId: offer.id,
+            offerType: offer.offer_type
         }
-      });
-    }
+    });
+}
+
+
+
   }
 };
 </script>
