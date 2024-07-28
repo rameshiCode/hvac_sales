@@ -40,8 +40,6 @@
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
   props: ['clientId', 'clientEmail'],
   created() {
@@ -49,32 +47,21 @@ export default {
     console.log('Received Client Email:', this.clientEmail);
   },
   methods: {
-    async selectCategory(categoryName) {
+    selectCategory(categoryName) {
       console.log('Selected Category:', categoryName);
-      try {
-        const response = await axios.post(`${this.$apiUrl}/offers`, {
-          clientId: this.clientId,
-          categoryName: categoryName,
-          offerType: 'category'
-        });
-        const categoryOffer = response.data;
-        this.$router.push({ 
-          name: 'ProductSelection', 
-          params: { 
-            clientId: this.clientId, 
-            categoryName: categoryName, 
-            clientEmail: this.clientEmail,
-            categoryOfferId: categoryOffer.id
-          }
-        });
-      } catch (error) {
-        console.error('Error creating category offer:', error);
-        alert('There was an error creating the category offer. Please try again.');
-      }
+      this.$router.push({ 
+        name: 'ProductSelection', 
+        params: { 
+          clientId: this.clientId, 
+          categoryName: categoryName, 
+          clientEmail: this.clientEmail 
+        }
+      });
     },
   }
 }
 </script>
+
 
 <style scoped>
 h1 {

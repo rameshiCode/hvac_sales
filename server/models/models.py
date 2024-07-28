@@ -67,8 +67,8 @@ class Offer(db.Model):
 class CategoryOffer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    category_name = db.Column(db.String(100), nullable=False)  # Change this to category_name
-    final_price = db.Column(db.Float, nullable=False)
+    category_name = db.Column(db.String(100), nullable=False)
+    final_price = db.Column(db.Float, nullable=True, default=0)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     client = db.relationship('Client', back_populates='category_offers')
     offers = db.relationship('Offer', back_populates='category_offer', cascade='all, delete-orphan')
@@ -77,7 +77,7 @@ class CategoryOffer(db.Model):
         return {
             'id': self.id,
             'client_id': self.client_id,
-            'category_name': self.category_name,  # Change this to category_name
+            'category_name': self.category_name,
             'final_price': self.final_price,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

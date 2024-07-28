@@ -381,11 +381,14 @@ def download_offer(offer_id):
 def create_offer():
     data = request.get_json()
     print("Received offer data:", data)
-    
-    # Fetch or create the CategoryOffer object
+
+    # Check if the CategoryOffer exists
     category_offer = CategoryOffer.query.filter_by(client_id=data['clientId'], category_name=data['categoryName']).first()
     if not category_offer:
-        category_offer = CategoryOffer(client_id=data['clientId'], category_name=data['categoryName'], final_price=0)
+        category_offer = CategoryOffer(
+            client_id=data['clientId'],
+            category_name=data['categoryName']
+        )
         db.session.add(category_offer)
         db.session.commit()
 
@@ -396,7 +399,7 @@ def create_offer():
             products_details=json.dumps(data['products']),
             total_price=data['totalPrice'],
             final_price=data['finalPrice'],
-            category_offer_id=category_offer.id  # Link to the CategoryOffer
+            category_offer_id=category_offer.id  # Link to the new CategoryOffer
         )
         db.session.add(new_offer)
         db.session.commit()
@@ -408,7 +411,6 @@ def create_offer():
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/offers/<int:offer_id>', methods=['PUT'])
