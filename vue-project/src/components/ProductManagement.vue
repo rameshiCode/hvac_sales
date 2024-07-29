@@ -28,7 +28,7 @@
         const formData = new FormData();
         formData.append('file', file);
         
-        apiClient.post(`${this.$apiUrl}/import`, formData, {
+        apiClient.post('/import', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
