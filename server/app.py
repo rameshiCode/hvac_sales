@@ -85,11 +85,16 @@ def get_clients():
 @app.route('/clients', methods=['POST'])
 def add_client():
     data = request.json
-    new_client = Client(name=data['name'], phone=data['phone'], address=data['address'], email=data['email'])
-    print(new_client)
+    new_client = Client(
+        name=data['name'],
+        phone=data['phone'],
+        address=data['address'],
+        email=data['email'],
+        notes=data.get('notes', '')  # Handle notes
+    )
     db.session.add(new_client)
     db.session.commit()
-    return jsonify({'id': new_client.id, 'name': new_client.name, 'email': new_client.email}), 201
+    return jsonify({'id': new_client.id, 'name': new_client.name, 'email': new_client.email, 'notes': new_client.notes}), 201
 
 @app.route('/clients/<int:id>', methods=['PUT'])
 def update_client(id):
@@ -99,8 +104,9 @@ def update_client(id):
     client.phone = data.get('phone', client.phone)
     client.email = data.get('email', client.email)
     client.address = data.get('address', client.address)
+    client.notes = data.get('notes', client.notes)  # Handle notes
     db.session.commit()
-    return jsonify({'id': client.id, 'name': client.name}), 200
+    return jsonify({'id': client.id, 'name': client.name, 'notes': client.notes}), 200
 
 @app.route('/clients/<int:id>', methods=['DELETE'])
 def delete_client(id):
@@ -157,23 +163,16 @@ def export_products():
 @app.route('/products', methods=['POST'])
 def add_product():
     data = request.json
-    print(f"Received data: {data}")
     new_product = Product(
         name=data['name'],
         price=data['price'],
-        category=data.get('category', ''),
-        area=data.get('area', 0)
+        category=data['category'],
+        subcategory=data['subcategory'],
+        area=data['area']
     )
     db.session.add(new_product)
     db.session.commit()
-    return jsonify({
-        'id': new_product.id,
-        'name': new_product.name,
-        'price': new_product.price,
-        'category': new_product.category,
-        'subcategory': new_product.subcategory,
-        'area': new_product.area
-    }), 201
+    return jsonify({"message": "Product added successfully!"}), 201
 
 @app.route('/products', methods=['GET'])
 def get_products():
@@ -218,14 +217,17 @@ def delete_product(product_id):
     db.session.commit()
     return jsonify({'message': 'Product deleted'}), 204
 
-@app.route('/products/<int:id>', methods=['PUT'])
-def update_product(id):
-    product = Product.query.get_or_404(id)
+@app.route('/products/<int:product_id>', methods=['PUT'])
+def update_product(product_id):
     data = request.json
-    product.name = data.get('name', product.name)
-    product.price = data.get('price', product.price)
+    product = Product.query.get_or_404(product_id)
+    product.name = data['name']
+    product.price = data['price']
+    product.category = data['category']
+    product.subcategory = data['subcategory']
+    product.area = data['area']
     db.session.commit()
-    return jsonify({'id': product.id, 'name': product.name, 'price': product.price}), 200
+    return jsonify({"message": "Product updated successfully!"}), 200
 
 @app.route('/create-pdf')
 def create_pdf():
@@ -364,7 +366,7 @@ def get_client(client_id):
         'name': client.name,
         'email': client.email,
         'phone': client.phone,
-        'address': client.address
+        'address': client.address,
     }), 200
 
 @app.route('/offers/<int:offer_id>/download', methods=['GET'])

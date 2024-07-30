@@ -41,7 +41,7 @@
 
 <script>
 export default {
-  props: ['clientId', 'clientEmail'],
+  props: ['clientId', 'clientEmail', 'clientNote'],
   created() {
     console.log('Received Client ID:', this.clientId);
     console.log('Received Client Email:', this.clientEmail);
@@ -54,7 +54,8 @@ export default {
         params: { 
           clientId: this.clientId, 
           categoryName: categoryName, 
-          clientEmail: this.clientEmail 
+          clientEmail: this.clientEmail,
+          clientNote: this.clientNote  
         }
       });
     },

@@ -70,7 +70,7 @@ const router = createRouter({
       path: '/clients/:clientId',
       name: 'ClientDetails',
       component: ClientDetails,
-      props: true,
+      props: route => ({ clientId: route.params.clientId, clientNote: route.params.clientNote })
     }
   ]
 })

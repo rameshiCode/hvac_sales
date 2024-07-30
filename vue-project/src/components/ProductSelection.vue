@@ -180,7 +180,7 @@
 import axios from 'axios';
 
 export default {
-  props: ['clientId', 'categoryName', 'clientEmail', 'offerId', 'offerType', 'categoryOfferId'],
+  props: ['clientId', 'categoryName', 'clientEmail', 'offerId', 'offerType', 'categoryOfferId', 'clientNote'],
   data() {
     return {
       products: [],
@@ -300,20 +300,20 @@ export default {
       });
     },
     categorizeProducts() {
-      this.mainProducts = this.products.filter(product => product.subcategory.toLowerCase() === 'main');
-      this.complementaryProducts = this.products.filter(product => product.subcategory.toLowerCase() !== 'main');
+      this.mainProducts = this.products.filter(product => product.subcategory && product.subcategory.toLowerCase() === 'main');
+      this.complementaryProducts = this.products.filter(product => product.subcategory && product.subcategory.toLowerCase() !== 'main');
       console.log("Main Products:", this.mainProducts);
       console.log("Complementary Products:", this.complementaryProducts);
     },
     searchProducts() {
       const searchLower = this.search.toLowerCase();
       const filtered = this.products.filter(product => 
-        product.name.toLowerCase().includes(searchLower) || 
+        (product.name && product.name.toLowerCase().includes(searchLower)) || 
         (product.category && product.category.toLowerCase().includes(searchLower)) || 
         (product.subcategory && product.subcategory.toLowerCase().includes(searchLower))
       );
-      this.mainProducts = filtered.filter(product => product.subcategory.toLowerCase() === 'main');
-      this.complementaryProducts = filtered.filter(product => product.subcategory.toLowerCase() !== 'main');
+      this.mainProducts = filtered.filter(product => product.subcategory && product.subcategory.toLowerCase() === 'main');
+      this.complementaryProducts = filtered.filter(product => product.subcategory && product.subcategory.toLowerCase() !== 'main');
     },
     updateTotalPrice() {
       this.totalPrice = this.products.reduce((acc, item) => {
@@ -367,39 +367,40 @@ export default {
       });
     },
     continueOffer() {
-  const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
-  const method = this.isEditing ? 'put' : 'post';
-  const offerData = {
-    clientId: this.clientId,
-    offerType: this.selectedOfferType,
-    products: this.products.filter(p => p.quantity > 0),
-    totalPrice: this.totalPrice,
-    finalPrice: this.totalPrice,
-    categoryOfferId: this.categoryOfferId,  // Include the category offer ID
-    categoryName: this.categoryName,  // Include category name
-    clientEmail: this.clientEmail  // Include client email
-  };
-  console.log('Continuing offer with data:', offerData); // Log the offer data for debugging
-  axios({ method, url, data: offerData })
-    .then(response => {
-      alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
-      const nextOfferType = this.getNextOfferType(this.selectedOfferType);
-      if (!this.isEditing && nextOfferType) {
-        this.selectedOfferType = nextOfferType;
-        this.loadProducts();
-      } else {
-        this.$router.push({ 
-          name: 'ClientDetails', 
-          params: { clientId: this.clientId },
-          query: { totalPrice: this.totalPrice }
+      const url = this.isEditing ? `${this.$apiUrl}/offers/${this.offerId}` : `${this.$apiUrl}/offers`;
+      const method = this.isEditing ? 'put' : 'post';
+      const offerData = {
+        clientId: this.clientId,
+        offerType: this.selectedOfferType,
+        products: this.products.filter(p => p.quantity > 0),
+        totalPrice: this.totalPrice,
+        finalPrice: this.totalPrice,
+        categoryOfferId: this.categoryOfferId,  // Include the category offer ID
+        categoryName: this.categoryName,  // Include category name
+        clientEmail: this.clientEmail,  // Include client email
+        clientNote: this.clientNote  // Include client note
+      };
+      console.log('Continuing offer with data:', offerData); // Log the offer data for debugging
+      axios({ method, url, data: offerData })
+        .then(response => {
+          alert(`${this.selectedOfferType} offer ${this.isEditing ? 'updated' : 'saved'} successfully!`);
+          const nextOfferType = this.getNextOfferType(this.selectedOfferType);
+          if (!this.isEditing && nextOfferType) {
+            this.selectedOfferType = nextOfferType;
+            this.loadProducts();
+          } else {
+            this.$router.push({ 
+              name: 'ClientDetails', 
+              params: { clientId: this.clientId, clientNote: this.clientNote },
+              query: { totalPrice: this.totalPrice }
+            });
+          }
+        })
+        .catch(error => {
+          console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
+          alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
         });
-      }
-    })
-    .catch(error => {
-      console.error(`Error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer:`, error);
-      alert(`There was an error ${this.isEditing ? 'updating' : 'saving'} the ${this.selectedOfferType} offer. Please try again.`);
-    });
-},
+    },
     getNextOfferType(currentOfferType) {
       const currentIndex = this.offerTypes.indexOf(currentOfferType);
       if (currentIndex >= 0 && currentIndex < this.offerTypes.length - 1) {
@@ -422,7 +423,8 @@ export default {
         totalPrice: this.totalPrice,
         finalPrice: this.totalPrice,
         categoryOfferId: this.categoryOfferId,  // Include the category offer ID if editing
-        categoryName: this.categoryName  // Include the category name
+        categoryName: this.categoryName,  // Include the category name
+        clientNote: this.clientNote,
       };
 
       axios({ method, url, data: offerData })
@@ -448,4 +450,3 @@ export default {
   margin-left: 5px;
 }
 </style>
-

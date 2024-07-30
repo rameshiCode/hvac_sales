@@ -1,5 +1,9 @@
 <template>
   <v-container>
+    <v-btn @click="toggleNotes">{{ showNotes ? 'Hide Notes' : 'Show Notes' }}</v-btn>
+    <div v-if="showNotes">
+      <p>{{ clientNotes }}</p>
+    </div>
     <h2>Category Offers</h2>
     <v-data-table
       :headers="categoryHeaders"
@@ -13,7 +17,7 @@
         <v-btn color="primary" @click="sendPdf(item)">Send PDF</v-btn>
       </template>
     </v-data-table>
-    <h2>Offers for Selected Category</h2>
+    <h2>Offers for {{ selectedCategoryName }}</h2>
     <v-data-table
       :headers="offerHeaders"
       :items="offers"
@@ -31,12 +35,14 @@
 import axios from 'axios';
 
 export default {
-  props: ['clientId'],
+  props: ['clientId', 'clientNote'],
   data() {
     return {
       categoryOffers: [],
       offers: [],
       selectedCategoryOfferId: null,
+      selectedCategoryName: '',
+      showNotes: false,  // Add this line
       categoryHeaders: [
         { text: 'Category Name', value: 'category_name' },
         { text: 'Final Price', value: 'final_price' },
@@ -49,7 +55,8 @@ export default {
         { text: 'Final Price', value: 'final_price' },
         { text: 'Created At', value: 'created_at' },
         { text: 'Actions', value: 'actions', sortable: false }
-      ]
+      ],
+      clientNotes: this.clientNote  // Initialize with prop value
     };
   },
   created() {
@@ -61,6 +68,7 @@ export default {
       axios.get(`${this.$apiUrl}/clients/${this.clientId}`)
         .then(response => {
           const client = response.data;
+          this.clientNotes = client.notes;  // Set clientNotes
           console.log('Fetched client details:', client);
         })
         .catch(error => {
@@ -133,6 +141,9 @@ export default {
         console.error('Error sending PDF:', error);
         alert('There was an error sending the PDF. Please try again.');
       }
+    },
+    toggleNotes() {
+      this.showNotes = !this.showNotes;
     }
   }
 };

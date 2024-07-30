@@ -43,7 +43,7 @@
           </v-menu>
         </template>
         <template v-slot:item.name="{ item }">
-          <v-list-item @click="viewClientDetails(item.id)" class="clickable">
+          <v-list-item @click="viewClientDetails(item)" class="clickable">
             <v-list-item-title>{{ item.name }}</v-list-item-title>
           </v-list-item>
         </template>
@@ -77,6 +77,11 @@
                     v-model="editable.address"
                     :rules="[v => !!v || 'Address is required']"
                   ></v-text-field>
+                  <v-textarea
+                    label="Notes"
+                    v-model="editable.notes"
+                    :rules="[v => !!v || 'Notes are required']"
+                  ></v-textarea>
                 </v-col>
               </v-row>
             </v-container>
@@ -122,92 +127,92 @@ export default {
     this.loadItems();
   },
   methods: {
-    async fetchClients() {
-      this.loading = true;
-      const sortOrder = this.sortOrder ? 'asc' : 'desc';
-      const params = {
-        page: this.page,
-        itemsPerPage: this.itemsPerPage,
-        sortBy: this.sortBy[0],
-        sortOrder: sortOrder,
-        search: this.search,
-      };
-      try {
-        const response = await axios.get(`${this.$apiUrl}/clients`, { params });
-        this.clients = response.data.items;
-        this.totalItems = response.data.total;
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    viewClientDetails(clientId) {
-      this.$router.push({ name: 'ClientDetails', params: { clientId } });
-    },
-    loadItems() {
-      this.fetchClients();
-    },
-    async saveClient(clientData) {
-      try {
-        const response = await axios.post(`${this.$apiUrl}/clients`, clientData);
-        console.log('Client created:', response.data); // Log the response
-        if (response.status === 201) {
-          const clientId = response.data.id;
-          const clientEmail = response.data.email;
-          this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
-        } else {
-          console.error('Unexpected response:', response);
-        }
-      } catch (error) {
-        console.error('Error adding client:', error);
-      }
-    },
-    save() {
-      if (this.editItem) {
-        axios.put(`${this.$apiUrl}/clients/${this.editItem}`, this.editable)
-          .then(() => {
-            this.loadItems();
-            this.close();
-          })
-          .catch(error => {
-            console.error('Error saving client:', error);
-          });
+  async fetchClients() {
+    this.loading = true;
+    const sortOrder = this.sortOrder ? 'asc' : 'desc';
+    const params = {
+      page: this.page,
+      itemsPerPage: this.itemsPerPage,
+      sortBy: this.sortBy[0],
+      sortOrder: sortOrder,
+      search: this.search,
+    };
+    try {
+      const response = await axios.get(`${this.$apiUrl}/clients`, { params });
+      this.clients = response.data.items;
+      this.totalItems = response.data.total;
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
+  viewClientDetails(client) {
+    this.$router.push({ name: 'ClientDetails', params: { clientId: client.id, clientNote: client.notes } });
+  },
+  loadItems() {
+    this.fetchClients();
+  },
+  async saveClient(clientData) {
+    try {
+      const response = await axios.post(`${this.$apiUrl}/clients`, clientData);
+      console.log('Client created:', response.data); // Log the response
+      if (response.status === 201) {
+        const clientId = response.data.id;
+        const clientEmail = response.data.email;
+        this.$router.push({ name: 'ProductCategorySelection', params: { clientId, clientEmail }});
       } else {
-        this.saveClient(this.editable);
+        console.error('Unexpected response:', response);
       }
-    },
-    deleteClient(clientId) {
-      axios.delete(`${this.$apiUrl}/clients/${clientId}`)
+    } catch (error) {
+      console.error('Error adding client:', error);
+    }
+  },
+  save() {
+    if (this.editItem) {
+      axios.put(`${this.$apiUrl}/clients/${this.editItem}`, this.editable)
         .then(() => {
           this.loadItems();
+          this.close();
         })
         .catch(error => {
-          console.error('Error deleting client:', error);
+          console.error('Error saving client:', error);
         });
-    },
-    enableEditing(client) {
-      this.editable = { ...client };
-      this.editItem = client.id;
-      this.dialog = true;
-      this.formTitle = 'Edit Client';
-    },
-    enableAdding() {
-      this.editable = { name: '', phone: '', email: '', address: '' };
-      this.editItem = null;
-      this.dialog = true;
-      this.formTitle = 'Add New Client';
-    },
-    createNewProject(client) {
-      const { id, email } = client;
-      this.$router.push({ 
-        name: 'ProductCategorySelection',
-        params: { clientId: id, clientEmail: email }
+    } else {
+      this.saveClient(this.editable);
+    }
+  },
+  deleteClient(clientId) {
+    axios.delete(`${this.$apiUrl}/clients/${clientId}`)
+      .then(() => {
+        this.loadItems();
+      })
+      .catch(error => {
+        console.error('Error deleting client:', error);
       });
-    },
-    close() {
-      this.dialog = false;
-    },
+  },
+  enableEditing(client) {
+    this.editable = { ...client };
+    this.editItem = client.id;
+    this.dialog = true;
+    this.formTitle = 'Edit Client';
+  },
+  enableAdding() {
+    this.editable = { name: '', phone: '', email: '', address: '', notes: '' };
+    this.editItem = null;
+    this.dialog = true;
+    this.formTitle = 'Add New Client';
+  },
+  createNewProject(client) {
+    const { id, email } = client;
+    this.$router.push({ 
+      name: 'ProductCategorySelection',
+      params: { clientId: id, clientEmail: email }
+    });
+  },
+  close() {
+    this.dialog = false;
+  },
   }
 };
 </script>
